@@ -1,4 +1,5 @@
 {
+    "name": "filament-timepicker",
     "private": true,
     "type": "module",
     "scripts": {

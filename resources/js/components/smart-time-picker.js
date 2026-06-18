@@ -230,6 +230,10 @@ export default function smartTimePicker(config) {
 
             const needle = value.trim().toLowerCase().replace(/\s/g, '')
             const base = this.visibleOptions()
+            // Run the text through the parser too, so shorthand like "9pm" or
+            // "330" (which never prefix-matches a formatted label) still surfaces
+            // its corresponding slot.
+            const parsed = this.parse(value)
 
             this.filtered =
                 needle === ''
@@ -237,7 +241,8 @@ export default function smartTimePicker(config) {
                     : base.filter(
                           (option) =>
                               option.label.toLowerCase().replace(/\s/g, '').startsWith(needle) ||
-                              option.value.startsWith(needle),
+                              option.value.startsWith(needle) ||
+                              (parsed !== null && option.value === parsed),
                       )
 
             this.highlight = 0

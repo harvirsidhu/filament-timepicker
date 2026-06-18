@@ -55,7 +55,7 @@
                 relativeStatePath: @js($relativeStatePath),
             })"
             x-on:keydown.escape.stop="isOpen && (close(), $event.preventDefault())"
-            x-on:scroll.window="isOpen && positionPanel()"
+            x-on:scroll.window.capture="isOpen && positionPanel()"
             x-on:resize.window="isOpen && positionPanel()"
             {{ $getExtraAlpineAttributeBag()->class(['fi-input-wrp-content', 'w-full']) }}
         >

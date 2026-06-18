@@ -7,7 +7,6 @@ use Filament\Forms\Components\Concerns;
 use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Contracts\HasAffixActions;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
-use Filament\Support\Icons\Heroicon;
 use Harvirsidhu\FilamentTimepicker\Support\TimeParser;
 use Illuminate\Support\Carbon;
 
@@ -45,7 +44,8 @@ class SmartTimePicker extends Field implements HasAffixActions
     {
         parent::setUp();
 
-        $this->prefixIcon(Heroicon::OutlinedClock);
+        // No prefix icon by default — consumers opt in with
+        // ->prefixIcon(\Filament\Support\Icons\Heroicon::OutlinedClock).
 
         // Display the stored value in canonical form so reopening a record
         // never shows seconds the field is configured to hide.

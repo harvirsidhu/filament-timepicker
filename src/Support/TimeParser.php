@@ -94,7 +94,7 @@ class TimeParser
      * Returns null for blank/invalid input so the field shows an empty box.
      *
      * `$displayFormat` uses PHP date() tokens. The default `g:i A` gives the
-     * non-padded, Google-Calendar look ("3:30 PM"); pass `h:i A` for a
+     * non-padded, 12-hour look ("3:30 PM"); pass `h:i A` for a
      * zero-padded hour ("03:30 PM").
      */
     public static function format(?string $value, string $displayFormat = 'g:i A'): ?string

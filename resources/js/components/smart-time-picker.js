@@ -1,5 +1,5 @@
 /**
- * Smart time picker — a Google-Calendar-style combobox.
+ * Smart time picker — a type-ahead time combobox.
  *
  * The text input is driven by a LOCAL `display` string, never bound directly
  * to Livewire. The canonical wall-clock value ("H:i" / "H:i:s") is written to

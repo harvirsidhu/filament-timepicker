@@ -5,7 +5,7 @@ Briefing for any coding-agent session working in this package. Read this first.
 ## What this is
 
 `harvirsidhu/filament-timepicker` — a standalone Filament v4/v5 **form field** package
-providing `SmartTimePicker`, a Google-Calendar-style time combobox: free-text parsing
+providing `SmartTimePicker`, a smart, type-ahead time combobox: free-text parsing
 (`3p`, `330`, `3:30 PM`), an interval dropdown, keyboard nav, and optional `relativeTo`
 duration labels. It is **domain-agnostic** — it knows nothing about clinics, appointments, or
 availability. Bounds and relative behaviour are supplied by the consuming form.

@@ -11,7 +11,7 @@ use Harvirsidhu\FilamentTimepicker\Support\TimeParser;
 use Illuminate\Support\Carbon;
 
 /**
- * A Google-Calendar-style smart time field. Type freely ("3p", "330",
+ * A smart, type-ahead time field. Type freely ("3p", "330",
  * "3:30 PM"); a filterable, keyboard-navigable dropdown suggests times at a
  * configurable interval. Stored as a canonical wall-clock `H:i` string with no
  * timezone shift — a 3 PM slot is always "15:00".

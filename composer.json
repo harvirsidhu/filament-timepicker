@@ -1,6 +1,6 @@
 {
     "name": "harvirsidhu/filament-timepicker",
-    "description": "A Google-Calendar-style smart time picker field for Filament. Type freely (3p, 330, 3:30 PM) with a filterable, keyboard-navigable suggestion dropdown.",
+    "description": "A smart, type-ahead time picker field for Filament. Type freely (3p, 330, 3:30 PM) with a filterable, keyboard-navigable suggestion dropdown.",
     "keywords": [
         "harvirsidhu",
         "laravel",

@@ -1,6 +1,6 @@
 # Filament Smart Time Picker
 
-A **Google-Calendar-style time field for [Filament](https://filamentphp.com)**. Your users
+A **smart, type-ahead time field for [Filament](https://filamentphp.com)**. Your users
 just type — `3p`, `330`, `3:30 PM`, `1530` — and a filterable, keyboard-navigable dropdown
 suggests times at whatever interval you choose. It looks and feels exactly like a native
 Filament field, but it's far more forgiving for non-technical staff.

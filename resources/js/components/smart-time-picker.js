@@ -16,6 +16,7 @@ export default function smartTimePicker(config) {
         min: config.min || null, // "HH:MM" or null
         max: config.max || null,
         seconds: config.seconds || false,
+        strict: config.strict || false,
         displayFormat: config.displayFormat || 'g:i A',
         isDisabled: config.isDisabled || false,
         relativeStatePath: config.relativeStatePath || null,
@@ -301,10 +302,24 @@ export default function smartTimePicker(config) {
             this.close()
         },
 
+        // Whether a canonical value lands on a generated slot. Mirrors
+        // SmartTimePicker::isOnGrid() on the PHP side.
+        isOnGrid(canonical) {
+            return this.options.some((option) => option.value === canonical)
+        },
+
         commit(value) {
             const normalized = this.parse(value)
 
             if (normalized === null) {
+                return
+            }
+
+            // In strict mode, reject an off-grid time and snap the box back to
+            // the last good state instead of committing it.
+            if (this.strict && !this.isOnGrid(normalized)) {
+                this.syncFromState()
+
                 return
             }
 

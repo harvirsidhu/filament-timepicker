@@ -40,6 +40,8 @@ class SmartTimePicker extends Field implements HasAffixActions
 
     protected bool | Closure $hasSeconds = false;
 
+    protected bool | Closure $isStrict = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -53,7 +55,17 @@ class SmartTimePicker extends Field implements HasAffixActions
 
         // The authoritative normalizer: whatever lands in state (typed,
         // pasted, JS-missed) is coerced to canonical `H:i`/`H:i:s` or null.
-        $this->dehydrateStateUsing(fn (?string $state): ?string => TimeParser::parse($state, $this->getSeconds()));
+        // In strict mode an otherwise-valid time that isn't on the interval
+        // grid (e.g. "12:01" with a 15-min interval) is rejected to null.
+        $this->dehydrateStateUsing(function (?string $state): ?string {
+            $parsed = TimeParser::parse($state, $this->getSeconds());
+
+            if ($parsed !== null && $this->isStrict() && ! $this->isOnGrid($parsed)) {
+                return null;
+            }
+
+            return $parsed;
+        });
     }
 
     /**
@@ -113,6 +125,19 @@ class SmartTimePicker extends Field implements HasAffixActions
     }
 
     /**
+     * Restrict committed values to the interval grid. When true, a free-typed
+     * time that parses validly but doesn't land on a generated slot (e.g.
+     * "12:01" with a 15-minute interval, or anything outside min/max) is
+     * rejected rather than stored.
+     */
+    public function strict(bool | Closure $condition = true): static
+    {
+        $this->isStrict = $condition;
+
+        return $this;
+    }
+
+    /**
      * Accepted for drop-in parity with the native TimePicker; this component is
      * always the custom combobox, so "native" has no effect.
      */
@@ -153,6 +178,43 @@ class SmartTimePicker extends Field implements HasAffixActions
     public function getSeconds(): bool
     {
         return (bool) $this->evaluate($this->hasSeconds);
+    }
+
+    public function isStrict(): bool
+    {
+        return (bool) $this->evaluate($this->isStrict);
+    }
+
+    /**
+     * Whether a canonical `H:i`/`H:i:s` value lands on a generated dropdown
+     * slot: zero seconds, within [min, max], and aligned to the interval from
+     * the floor. Mirrors generateOptions() in the JS component.
+     */
+    protected function isOnGrid(string $canonical): bool
+    {
+        $parts = array_map('intval', explode(':', $canonical));
+        $minutes = ($parts[0] * 60) + $parts[1];
+        $second = $parts[2] ?? 0;
+
+        if ($second !== 0) {
+            return false;
+        }
+
+        $start = $this->getMinTime() !== null ? $this->toMinutes($this->getMinTime()) : 0;
+        $end = $this->getMaxTime() !== null ? $this->toMinutes($this->getMaxTime()) : (24 * 60) - 1;
+
+        if ($minutes < $start || $minutes > $end) {
+            return false;
+        }
+
+        return (($minutes - $start) % $this->getInterval()) === 0;
+    }
+
+    protected function toMinutes(string $canonical): int
+    {
+        [$hour, $minute] = array_map('intval', explode(':', $canonical));
+
+        return ($hour * 60) + $minute;
     }
 
     /**

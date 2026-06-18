@@ -50,6 +50,7 @@
                 min: @js($getMinTime()),
                 max: @js($getMaxTime()),
                 seconds: @js($getSeconds()),
+                strict: @js($isStrict()),
                 displayFormat: @js($getDisplayFormat()),
                 isDisabled: @js($isDisabled),
                 relativeStatePath: @js($relativeStatePath),

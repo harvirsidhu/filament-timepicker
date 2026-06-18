@@ -45,8 +45,9 @@ class TimeParser
         $minute = 0;
         $second = 0;
 
-        if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $normalized, $matches)) {
-            // "h:mm" or "hh:mm" (optional ":ss")
+        if (preg_match('/^(\d{1,2})[:.h](\d{2})(?:[:.h](\d{2}))?$/', $normalized, $matches)) {
+            // "h:mm" / "hh:mm" with a colon, dot, or "h" separator (UK/MY "9.30",
+            // French "9h30"), optionally with ":ss" / ".ss".
             $hour = (int) $matches[1];
             $minute = (int) $matches[2];
             $second = isset($matches[3]) ? (int) $matches[3] : 0;

@@ -65,7 +65,8 @@ export default function smartTimePicker(config) {
             let second = 0
             let m
 
-            if ((m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/))) {
+            // colon, dot, or "h" separator (UK/MY "9.30", French "9h30")
+            if ((m = s.match(/^(\d{1,2})[:.h](\d{2})(?:[:.h](\d{2}))?$/))) {
                 hour = parseInt(m[1], 10)
                 minute = parseInt(m[2], 10)
                 second = m[3] ? parseInt(m[3], 10) : 0

@@ -29,6 +29,15 @@ it('parses every supported input shape to canonical H:i', function (?string $inp
     '1530' => ['1530', '15:30'],
     '0930' => ['0930', '09:30'],
 
+    // alternative separators: dot (UK/MY), "h" (French)
+    '9.30' => ['9.30', '09:30'],
+    '9.30 pm' => ['9.30 pm', '21:30'],
+    '15.45' => ['15.45', '15:45'],
+    '9h30' => ['9h30', '09:30'],
+    '9H30 (uppercase)' => ['9H30', '09:30'],
+    '12.00 am' => ['12.00 am', '00:00'],
+    'dot, single minute digit is invalid' => ['9.5', null],
+
     // already canonical / 24h
     '15:00' => ['15:00', '15:00'],
     '09:05' => ['09:05', '09:05'],

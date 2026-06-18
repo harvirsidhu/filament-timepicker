@@ -308,9 +308,12 @@ export default function smartTimePicker(config) {
 
         positionPanel() {
             const rect = this.$refs.input.getBoundingClientRect()
+            // Teleported to <body> and fixed-positioned so it escapes the
+            // overflow clipping of repeater rows and modals. z-index sits above
+            // Filament's modal layer.
             this.panelStyle =
                 `position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px;` +
-                ` min-width: ${rect.width}px;`
+                ` min-width: ${rect.width}px; z-index: 9999;`
         },
 
         scrollToHighlight() {

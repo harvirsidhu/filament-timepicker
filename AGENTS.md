@@ -57,9 +57,11 @@ Parse rules (PHP + JS): `3:30 PM`→`15:30`, `3p`/`3pm`→`15:00`, `9`→`09:00`
 Separators accepted in `hh:mm`: `:` `.` `h`.
 
 `strict(true)` confines commits to the interval grid: a validly-parsed time that isn't a
-generated slot (off-interval, or outside min/max) is rejected — nulled in `dehydrateStateUsing`
-(PHP, authoritative) and snapped back to the last good value in the JS `commit()`. Grid math
-lives in `SmartTimePicker::isOnGrid()` mirrored by `isOnGrid()` in the JS component.
+generated slot (off-interval, or outside min/max) is rejected. The JS `commit()` snaps typed
+off-grid input back to the last good value; on the PHP side a **validation rule** (registered in
+`setUp()`) fails off-grid values that bypass the client (paste/programmatic/import) with a
+message, rather than silently nulling them. Grid math lives in `SmartTimePicker::isOnGrid()`
+mirrored by `isOnGrid()` in the JS component. `dehydrateStateUsing` stays a pure parse normalizer.
 
 ## Asset build loop (important)
 

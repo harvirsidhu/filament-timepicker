@@ -2,6 +2,7 @@
 
 use Harvirsidhu\FilamentTimepicker\SmartTimePicker;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 it('defaults to a 15-minute interval and overrides it', function () {
     expect(SmartTimePicker::make('start')->getInterval())->toBe(15)
@@ -58,6 +59,20 @@ it('confines the grid to min/max bounds', function () {
         ->and($isOnGrid->invoke($field, '08:30'))->toBeFalse()
         ->and($isOnGrid->invoke($field, '17:30'))->toBeFalse()
         ->and($isOnGrid->invoke($field, '09:15'))->toBeFalse();
+});
+
+it('fails validation for an off-grid time only in strict mode', function () {
+    $strict = SmartTimePicker::make('start')->interval(15)->strict();
+    $loose = SmartTimePicker::make('start')->interval(15);
+
+    $validate = fn (SmartTimePicker $field, string $value): bool => Validator::make(
+        ['start' => $value],
+        ['start' => $field->getValidationRules()],
+    )->fails();
+
+    expect($validate($strict, '12:01'))->toBeTrue()   // off the 15-min grid
+        ->and($validate($strict, '12:15'))->toBeFalse() // on grid
+        ->and($validate($loose, '12:01'))->toBeFalse(); // strict off → anything parseable passes
 });
 
 it('keeps native() and timezone() as no-ops for drop-in parity', function () {

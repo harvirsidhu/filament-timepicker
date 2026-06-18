@@ -55,16 +55,27 @@ class SmartTimePicker extends Field implements HasAffixActions
 
         // The authoritative normalizer: whatever lands in state (typed,
         // pasted, JS-missed) is coerced to canonical `H:i`/`H:i:s` or null.
-        // In strict mode an otherwise-valid time that isn't on the interval
-        // grid (e.g. "12:01" with a 15-min interval) is rejected to null.
-        $this->dehydrateStateUsing(function (?string $state): ?string {
-            $parsed = TimeParser::parse($state, $this->getSeconds());
+        $this->dehydrateStateUsing(fn (?string $state): ?string => TimeParser::parse($state, $this->getSeconds()));
 
-            if ($parsed !== null && $this->isStrict() && ! $this->isOnGrid($parsed)) {
-                return null;
-            }
+        // In strict mode, surface a real validation error for a validly-parsed
+        // time that isn't on the interval grid (e.g. a pasted/programmatic
+        // "12:01" with a 15-min interval) instead of silently dropping it. The
+        // JS already snaps typed off-grid input back, so this mainly guards
+        // values that bypass the client.
+        $component = $this;
 
-            return $parsed;
+        $this->rule(function () use ($component): Closure {
+            return function (string $attribute, mixed $value, Closure $fail) use ($component): void {
+                if (! $component->isStrict()) {
+                    return;
+                }
+
+                $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
+
+                if ($parsed !== null && ! $component->isOnGrid($parsed)) {
+                    $fail(__('Choose a time at :interval-minute intervals.', ['interval' => $component->getInterval()]));
+                }
+            };
         });
     }
 

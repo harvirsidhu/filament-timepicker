@@ -28,16 +28,22 @@ gives them that, while still storing a clean, canonical value.
 | `330`    | `03:30`   | 3:30 AM  |
 | `1530`   | `15:30`   | 3:30 PM  |
 | `3:30 PM`| `15:30`   | 3:30 PM  |
+| `9.30` / `9h30` | `09:30` | 9:30 AM |
 
-Anything unparseable is rejected on the server, so bad data never reaches your database.
+The `hh:mm` part accepts a colon, a dot, or an `h` as the separator — so `9:30`, `9.30`
+(UK/Malaysia) and `9h30` (French) all work. Anything unparseable is rejected on the server, so
+bad data never reaches your database.
 
 ---
 
 ## Features
 
-- ⌨️ **Forgiving free-text input** — meridiems (`3p`, `3 pm`), bare hours (`9`), and compact
-  digits (`330`, `1530`) all parse to a canonical 24-hour value.
+- ⌨️ **Forgiving free-text input** — meridiems (`3p`, `3 pm`), bare hours (`9`), compact
+  digits (`330`, `1530`), and `:`/`.`/`h` separators (`9.30`, `9h30`) all parse to a canonical
+  24-hour value.
 - 📋 **Suggestion dropdown** at a configurable `interval`, filtered as you type.
+- 🔒 **Optional `strict` mode** — confine values to the interval grid, with a validation error
+  for anything off it.
 - 🧭 **Full keyboard control** — ↑/↓ to move, Enter/Tab to pick, Esc to close.
 - ⏱️ **Relative duration hints** — show `30 mins`, `1 hour 15 mins` next to each option,
   perfect for an "end time" that depends on a "start time".
@@ -146,6 +152,22 @@ SmartTimePicker::make('start_time')->displayFormat('h:i A');  // 03:30 PM
 SmartTimePicker::make('start_time')->displayFormat('H:i');    // 15:30 (24-hour)
 ```
 
+### Strict mode
+
+By default the field is forgiving: a user can type any valid time (e.g. `12:01`) even if it
+isn't one of the suggested slots. Call `strict()` to confine values to the interval grid:
+
+```php
+SmartTimePicker::make('start_time')
+    ->interval(15)
+    ->strict();   // only :00, :15, :30, :45 (within min/max) are accepted
+```
+
+With `strict` on, typing an off-grid time snaps the box back to the last valid value as you go,
+and any off-grid value that reaches the server (a pasted entry, a programmatic default, an
+import) fails validation with a clear message rather than being silently dropped. Leave it off
+(the default) to keep the loose, type-anything behaviour.
+
 ---
 
 ## API reference
@@ -158,6 +180,7 @@ SmartTimePicker::make('start_time')->displayFormat('H:i');    // 15:30 (24-hour)
 | `relativeTo(string\|Closure\|null)` | `null` | Sibling field name; adds duration labels and a floor. |
 | `displayFormat(string\|Closure)` | `'g:i A'` | How the value is shown, in PHP `date()` tokens. |
 | `seconds(bool\|Closure)` | `false` | Store/display seconds (`H:i:s`). |
+| `strict(bool\|Closure)` | `false` | Confine values to the interval grid; off-grid times fail validation. |
 
 It also accepts `native()` and `timezone()` as **no-ops**, so it's a drop-in replacement for
 Filament's `TimePicker` — existing call chains keep working.
@@ -184,6 +207,7 @@ use Harvirsidhu\FilamentTimepicker\Support\TimeParser;
 
 TimeParser::parse('3:30 pm');   // "15:30"
 TimeParser::parse('930');       // "09:30"
+TimeParser::parse('9.30');      // "09:30"  (dot / "h" separators too)
 TimeParser::parse('nope');      // null
 TimeParser::format('15:30');    // "3:30 PM"
 ```

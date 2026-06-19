@@ -34,6 +34,7 @@ export default function smartTimePicker(config) {
         filtered: [],
         highlight: 0,
         panelStyle: '',
+        repositionOnViewport: null,
 
         init() {
             this.options = this.generateOptions()
@@ -46,6 +47,27 @@ export default function smartTimePicker(config) {
                     this.syncFromState()
                 }
             })
+
+            // Re-position while the panel is open when the mobile soft keyboard
+            // opens/closes or the page is pinch-zoomed — these change the visual
+            // viewport without firing a window resize, so x-on:resize can't see
+            // them. Cleaned up in destroy().
+            const vv = window.visualViewport
+
+            if (vv) {
+                this.repositionOnViewport = () => this.isOpen && this.positionPanel()
+                vv.addEventListener('resize', this.repositionOnViewport)
+                vv.addEventListener('scroll', this.repositionOnViewport)
+            }
+        },
+
+        destroy() {
+            const vv = window.visualViewport
+
+            if (vv && this.repositionOnViewport) {
+                vv.removeEventListener('resize', this.repositionOnViewport)
+                vv.removeEventListener('scroll', this.repositionOnViewport)
+            }
         },
 
         // ---- parsing (mirror of PHP TimeParser::parse) ----
@@ -537,22 +559,40 @@ export default function smartTimePicker(config) {
             const rect = this.$refs.input.getBoundingClientRect()
             const margin = 4
             const maxPanelHeight = 240 // matches max-h-60 (15rem)
-            const spaceBelow = window.innerHeight - rect.bottom
+
+            // Measure against the *visual* viewport, not window.innerHeight, so
+            // the on-screen keyboard on mobile is accounted for — the layout
+            // viewport doesn't shrink when the keyboard opens, but the visual
+            // one does, and an unflipped panel would render behind it.
+            const vv = window.visualViewport
+            const viewTop = vv ? vv.offsetTop : 0
+            const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight
+            const spaceBelow = viewBottom - rect.bottom
+            const spaceAbove = rect.top - viewTop
 
             // Flip the panel above the input when there isn't room below and
             // there's more room above — keeps the dropdown on screen in a tall
-            // form's last row.
-            const openUp = spaceBelow < maxPanelHeight && rect.top > spaceBelow
-            const vertical = openUp
-                ? `bottom: ${window.innerHeight - rect.top + margin}px;`
+            // form's last row, or when the keyboard covers the lower half.
+            const openUp = spaceBelow < maxPanelHeight && spaceAbove > spaceBelow
+
+            // Place by `top` for both directions (fixed-position `top` is stable
+            // across browsers); when opening up, translate the panel fully above
+            // the input so its own height never needs measuring.
+            const placement = openUp
+                ? `top: ${rect.top - margin}px; transform: translateY(-100%);`
                 : `top: ${rect.bottom + margin}px;`
+
+            // Never exceed the visible space on the chosen side, so a cramped
+            // screen scrolls the list internally instead of clipping off-screen.
+            const available = (openUp ? spaceAbove : spaceBelow) - margin
+            const maxHeight = Math.max(96, Math.min(maxPanelHeight, available))
 
             // Teleported to <body> and fixed-positioned so it escapes the
             // overflow clipping of repeater rows and modals. z-index sits above
             // Filament's modal layer.
             this.panelStyle =
-                `position: fixed; left: ${rect.left}px; ${vertical}` +
-                ` min-width: ${rect.width}px; z-index: 9999;`
+                `position: fixed; left: ${rect.left}px; ${placement}` +
+                ` min-width: ${rect.width}px; max-height: ${maxHeight}px; z-index: 9999;`
         },
 
         scrollToHighlight() {

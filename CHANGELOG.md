@@ -15,6 +15,13 @@ All notable changes to `filament-timepicker` will be documented in this file.
   message, `relativeTo` duration words) into publishable translations under the
   `harvirsidhu-filament-timepicker` namespace.
 - UX: the suggestion panel now flips above the input when there isn't room below.
+- Mobile: the panel is measured against the visual viewport, so it stays in view
+  when the on-screen keyboard opens, and caps its height to the visible space
+  (scrolling internally) instead of clipping off-screen; it re-positions on
+  `visualViewport` resize/scroll (keyboard show/hide, pinch-zoom).
+- Mobile: dropdown options use a touch-friendly row height (≈44px), compact on
+  larger pointers (`sm:` breakpoint), and select on `pointerdown` so a tap commits
+  directly rather than relying on synthesized mouse events.
 - UX: an empty field opens with the slot nearest the current time highlighted
   (instead of always the first option); a committed value still highlights itself.
 - Fix: scroll the highlighted option into view on open (the previous index counted

@@ -44,6 +44,8 @@ SmartTimePicker::make('start_time')
 - 🔒 **Optional strict mode** — confine values to the grid and reject anything off it.
 - 🌍 **Wall-clock safe** — a 3 PM slot is always stored as `15:00`. No surprise timezone shifts.
 - 🎨 **Native Filament look** — same input chrome, light/dark aware, screen-reader friendly.
+- 📱 **Mobile-ready** — a plain text input (no OS time-wheel hijack), touch-sized options, and a
+  dropdown that stays in view when the on-screen keyboard opens.
 - 🪶 **Zero cost when unused** — the JavaScript is lazy-loaded only on pages that have the field.
 
 ---

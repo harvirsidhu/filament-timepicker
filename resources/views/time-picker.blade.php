@@ -122,7 +122,7 @@
                     class="fi-dropdown-panel fi-ti-panel max-h-60 w-max max-w-xs overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
                 >
                     <template x-if="! filtered.length">
-                        <li class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        <li class="px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 sm:py-2">
                             {{ __('harvirsidhu-filament-timepicker::time-picker.no_matching_time') }}
                         </li>
                     </template>
@@ -132,13 +132,18 @@
                             :id="optionId(index)"
                             role="option"
                             :aria-selected="index === highlight ? 'true' : 'false'"
-                            x-on:mousedown.prevent="select(option)"
+                            {{-- pointerdown (not mousedown) so a touch tap selects
+                                 directly without relying on synthesized mouse
+                                 events; .prevent keeps input focus so blur doesn't
+                                 close the panel before select() runs. --}}
+                            x-on:pointerdown.prevent="select(option)"
                             x-on:mousemove="highlight = index"
                             :class="{
                                 'bg-primary-500/10 text-primary-600 dark:text-primary-400': index === highlight,
                                 'text-gray-700 dark:text-gray-200': index !== highlight,
                             }"
-                            class="flex cursor-pointer items-center justify-between gap-4 px-3 py-1.5 text-sm"
+                            {{-- Roomier rows on touch (≈44px); compact on sm+ pointers. --}}
+                            class="flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 text-sm sm:py-1.5"
                         >
                             <span x-text="option.label" class="font-medium tabular-nums"></span>
                             <span

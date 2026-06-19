@@ -34,6 +34,13 @@ It was extracted from the `cliniclah-app` clinic project, which is its first con
   `wire:model`. The canonical value is written to the entangled `state` only on commit. This is
   deliberate — it stops Livewire echoing state back and clobbering the cursor. Don't "simplify"
   it to a direct `x-model="state"`.
+- **`wire:ignore` on the `x-data` root is load-bearing — don't remove it.** The suggestion
+  panel uses `<template x-teleport="body">` to escape overflow clipping. When Livewire morphs
+  the DOM after a roundtrip it re-processes that template and re-inits the teleported `<ul>`
+  *outside* the component's Alpine scope, so every binding on it (`panelStyle`, `isOpen`,
+  `filtered`, `listboxId()`, …) throws "… is not defined". `wire:ignore` tells Livewire to skip
+  the Alpine-managed subtree; state still syncs via `$entangle` + the `init()` `$watch`, exactly
+  like Filament's own Alpine inputs (e.g. `Select`).
 - **One translation namespace: `harvirsidhu-filament-timepicker::`.** All user-facing strings
   live in `resources/lang/<locale>/time-picker.php`. Spatie's `hasTranslations()` would register
   them under the package shortName (`filament-timepicker`), so the service provider *also*

@@ -44,6 +44,12 @@
         <div
             x-load
             x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('smart-time-picker', 'harvirsidhu/filament-timepicker') }}"
+            {{-- Livewire must not morph this Alpine-managed subtree: morphing
+                 re-processes the `x-teleport` panel and re-inits the teleported
+                 <ul> outside the component scope (every binding then throws
+                 "… is not defined"). State stays in sync via $entangle + the
+                 init() $watch, exactly like Filament's own Alpine inputs. --}}
+            wire:ignore
             x-data="smartTimePicker({
                 state: $wire.$entangle('{{ $statePath }}'),
                 interval: @js($getInterval()),

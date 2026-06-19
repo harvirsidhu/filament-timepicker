@@ -15,5 +15,15 @@ All notable changes to `filament-timepicker` will be documented in this file.
   message, `relativeTo` duration words) into publishable translations under the
   `harvirsidhu-filament-timepicker` namespace.
 - UX: the suggestion panel now flips above the input when there isn't room below.
+- UX: an empty field opens with the slot nearest the current time highlighted
+  (instead of always the first option); a committed value still highlights itself.
+- Fix: scroll the highlighted option into view on open (the previous index counted
+  the `<template>`/empty-state nodes, so it never scrolled to the right row).
+- UX: in loose (non-strict) mode a validly-typed off-grid time (e.g. `9:20 AM`, or
+  the partial `9:20 A`) now appears as a selectable "Custom" suggestion in the
+  dropdown instead of "No matching time".
+- Fix: add `wire:ignore` to the Alpine root so a Livewire DOM morph no longer
+  re-inits the teleported dropdown outside its scope ("… is not defined" errors).
+- Docs: document Filament's `->default()` (static and closure) for pre-filling.
 - Tooling: add `phpstan.neon.dist` so `composer analyse` works; `export-ignore`
   `package-lock.json`.

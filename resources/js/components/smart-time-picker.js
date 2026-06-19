@@ -238,16 +238,51 @@ export default function smartTimePicker(config) {
                 return
             }
 
-            this.filtered = this.visibleOptions()
-            this.highlight = Math.max(
-                0,
-                this.filtered.findIndex(
-                    (o) => o.value === this.parse(this.state),
-                ),
+            const current = this.parse(this.state)
+            this.filtered = this.withCustomOptions(
+                this.visibleOptions(),
+                current === null ? [] : [current],
             )
+            this.highlight = this.initialHighlightIndex()
             this.isOpen = true
             this.positionPanel()
             this.$nextTick(() => this.scrollToHighlight())
+        },
+
+        // Which option to highlight when the panel opens with no typed filter:
+        // the committed value if there is one, otherwise the slot nearest the
+        // current wall-clock time (so an empty field opens somewhere useful
+        // rather than at 12:00 AM). Highlight only — nothing commits until pick.
+        initialHighlightIndex() {
+            if (!this.filtered.length) {
+                return 0
+            }
+
+            const current = this.parse(this.state)
+            const selected = this.filtered.findIndex(
+                (option) => option.value === current,
+            )
+
+            if (selected !== -1) {
+                return selected
+            }
+
+            const now = new Date()
+            const nowMinutes = now.getHours() * 60 + now.getMinutes()
+
+            let nearest = 0
+            let smallestDelta = Infinity
+
+            this.filtered.forEach((option, index) => {
+                const delta = Math.abs(option.minutes - nowMinutes)
+
+                if (delta < smallestDelta) {
+                    smallestDelta = delta
+                    nearest = index
+                }
+            })
+
+            return nearest
         },
 
         close() {
@@ -271,7 +306,7 @@ export default function smartTimePicker(config) {
             // its corresponding slot.
             const parsed = this.parse(value)
 
-            this.filtered =
+            const matches =
                 needle === ''
                     ? base
                     : base.filter(
@@ -284,6 +319,10 @@ export default function smartTimePicker(config) {
                               (parsed !== null && option.value === parsed),
                       )
 
+            this.filtered = this.withCustomOptions(
+                matches,
+                this.customCandidates(value),
+            )
             this.highlight = 0
 
             if (!this.isOpen) {
@@ -362,6 +401,119 @@ export default function smartTimePicker(config) {
             return this.options.some((option) => option.value === canonical)
         },
 
+        // In loose (non-strict) mode, surface validly-typed times that aren't on
+        // the interval grid as selectable rows, so "9:20 AM" (or the partial
+        // "9:20 A") can be picked even though it isn't a generated slot. Strict
+        // mode deliberately omits them — off-grid times aren't allowed.
+        withCustomOptions(list, candidates) {
+            if (this.strict || !candidates.length) {
+                return list
+            }
+
+            const extra = candidates
+                .filter(
+                    (value) => !list.some((option) => option.value === value),
+                )
+                .map((value) => this.customOption(value))
+
+            if (!extra.length) {
+                return list
+            }
+
+            // Insert custom rows in chronological position (not pinned on top) so
+            // a reopened off-grid value sits among the grid times — e.g. 3:25 PM
+            // lands between 3:15 PM and 3:30 PM, where open() then highlights and
+            // scrolls to it.
+            return [...list, ...extra].sort((a, b) => a.minutes - b.minutes)
+        },
+
+        // Canonical value(s) the typed text could mean. A 12-hour time without a
+        // meridiem is ambiguous, so "3:25" yields both 03:25 and 15:25 ("3:25 AM"
+        // and "3:25 PM"); anything unambiguous (meridiem given, 24-hour hour,
+        // midnight) yields a single value.
+        customCandidates(value) {
+            // Mid-typing a single minute digit ("9:2") doesn't parse yet; treat
+            // the digit as the tens place and preview the filled minute
+            // ("9:2" → 9:20) so a suggestion shows as you type the minute.
+            const parsed =
+                this.parse(value) ?? this.parse(this.fillPartial(value))
+
+            if (parsed === null) {
+                return []
+            }
+
+            const candidates = [parsed]
+
+            if (!this.hasMeridiem(value)) {
+                const alternate = this.toggleMeridiem(parsed)
+
+                if (alternate !== null && alternate !== parsed) {
+                    candidates.push(alternate)
+                }
+            }
+
+            return candidates
+        },
+
+        // Complete "hour + separator + single minute digit" by padding the minute
+        // to two digits (the typed digit is the tens place): "9:2" → "9:20",
+        // "9.2 p" → "9:20 p". Returns null when the text isn't that shape.
+        fillPartial(value) {
+            let s = String(value).trim().toLowerCase()
+            let meridiem = ''
+
+            const found = s.match(/\s*([ap])\.?m?\.?$/)
+
+            if (found) {
+                meridiem = ` ${found[1]}`
+                s = s.replace(/\s*([ap])\.?m?\.?$/, '').trim()
+            }
+
+            const partial = s.match(/^(\d{1,2})[:.h](\d)$/)
+
+            return partial ? `${partial[1]}:${partial[2]}0${meridiem}` : null
+        },
+
+        hasMeridiem(value) {
+            return /\s*([ap])\.?m?\.?$/.test(String(value).trim().toLowerCase())
+        },
+
+        // The other 12-hour reading of a canonical value: 1–11 ⇄ 13–23, 12 ⇄ 00.
+        // Returns null for hours that have no ambiguous twin (00, 13–23).
+        toggleMeridiem(canonical) {
+            const parts = canonical.split(':').map((n) => parseInt(n, 10))
+            let hour = parts[0]
+
+            if (hour >= 1 && hour <= 11) {
+                hour += 12
+            } else if (hour === 12) {
+                hour = 0
+            } else {
+                return null
+            }
+
+            const pad = (n) => String(n).padStart(2, '0')
+
+            return [hour, ...parts.slice(1)].map(pad).join(':')
+        },
+
+        customOption(value) {
+            const minutes = this.minutesOf(value)
+            const option = {
+                value,
+                label: this.toDisplay(value),
+                minutes,
+            }
+
+            const reference = this.referenceMinutes()
+
+            if (reference !== null && minutes > reference) {
+                option.duration = this.formatDuration(minutes - reference)
+            }
+
+            return option
+        },
+
         commit(value) {
             const normalized = this.parse(value)
 
@@ -410,7 +562,11 @@ export default function smartTimePicker(config) {
                 return
             }
 
-            const active = panel.children[this.highlight]
+            // Index the rendered option rows, not panel.children — the latter
+            // also counts the x-if/x-for <template> markers and the empty-state
+            // <li>, which would offset the target and break scroll-into-view.
+            const active =
+                panel.querySelectorAll('[role="option"]')[this.highlight]
 
             if (active) {
                 active.scrollIntoView({ block: 'nearest' })

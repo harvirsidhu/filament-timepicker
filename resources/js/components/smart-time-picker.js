@@ -35,6 +35,7 @@ export default function smartTimePicker(config) {
         highlight: 0,
         panelStyle: '',
         repositionOnViewport: null,
+        pointerOrigin: null,
 
         init() {
             this.options = this.generateOptions()
@@ -400,6 +401,38 @@ export default function smartTimePicker(config) {
             this.close()
         },
 
+        // Touch/mouse selection that tells a tap apart from a scroll-drag.
+        // pointerdown records the origin and keeps focus on the input (so the
+        // panel doesn't blur-close and the mobile keyboard stays up); the option
+        // commits on pointerup only if the pointer barely moved. A drag to scroll
+        // the list — which on a phone almost always starts on a row — therefore
+        // scrolls instead of selecting.
+        onOptionPointerDown(event) {
+            // Keep focus on the input. This does NOT block native scrolling:
+            // per the Pointer Events spec, scroll is governed by touch-action,
+            // not by preventDefault on pointerdown.
+            event.preventDefault()
+            this.pointerOrigin = { x: event.clientX, y: event.clientY }
+        },
+
+        onOptionPointerUp(event, option) {
+            const origin = this.pointerOrigin
+            this.pointerOrigin = null
+
+            if (origin === null) {
+                return
+            }
+
+            const moved =
+                Math.abs(event.clientX - origin.x) +
+                Math.abs(event.clientY - origin.y)
+
+            // A tap/click barely moves; beyond the threshold it was a scroll.
+            if (moved <= 10) {
+                this.select(option)
+            }
+        },
+
         // ---- ARIA wiring (combobox/listbox pattern) ----
         listboxId() {
             return this.fieldId ? `${this.fieldId}-listbox` : null
@@ -589,10 +622,11 @@ export default function smartTimePicker(config) {
 
             // Teleported to <body> and fixed-positioned so it escapes the
             // overflow clipping of repeater rows and modals. z-index sits above
-            // Filament's modal layer.
+            // Filament's modal layer. Width is pinned to the input, exactly like
+            // Filament's own Select dropdown (dropdown.style.width = button width).
             this.panelStyle =
                 `position: fixed; left: ${rect.left}px; ${placement}` +
-                ` min-width: ${rect.width}px; max-height: ${maxHeight}px; z-index: 9999;`
+                ` width: ${rect.width}px; max-height: ${maxHeight}px; z-index: 9999;`
         },
 
         scrollToHighlight() {

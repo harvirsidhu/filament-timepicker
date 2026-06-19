@@ -119,10 +119,14 @@
                     :id="listboxId()"
                     role="listbox"
                     aria-label="{{ __('harvirsidhu-filament-timepicker::time-picker.listbox_label') }}"
-                    class="fi-dropdown-panel fi-ti-panel max-h-60 w-max max-w-xs overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+                    {{-- Mirrors Filament's own dropdown panel + list chrome
+                         (rounded-lg bg-white/gray-900 ring + shadow, p-1 grid).
+                         fi-dropdown-panel is intentionally NOT used: its
+                         max-w-[14rem]! would override the input-matched width. --}}
+                    class="fi-ti-panel max-h-60 space-y-px overflow-y-auto touch-pan-y rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
                 >
                     <template x-if="! filtered.length">
-                        <li class="px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 sm:py-2">
+                        <li class="rounded-md px-2 py-2.5 text-sm text-gray-500 dark:text-gray-400 sm:py-2">
                             {{ __('harvirsidhu-filament-timepicker::time-picker.no_matching_time') }}
                         </li>
                     </template>
@@ -132,20 +136,21 @@
                             :id="optionId(index)"
                             role="option"
                             :aria-selected="index === highlight ? 'true' : 'false'"
-                            {{-- pointerdown (not mousedown) so a touch tap selects
-                                 directly without relying on synthesized mouse
-                                 events; .prevent keeps input focus so blur doesn't
-                                 close the panel before select() runs. --}}
-                            x-on:pointerdown.prevent="select(option)"
+                            {{-- Select on pointerup only if it was a tap, not a
+                                 scroll-drag (a drag starting on a row scrolls the
+                                 list instead of committing). pointerdown keeps
+                                 input focus so blur doesn't close the panel. --}}
+                            x-on:pointerdown="onOptionPointerDown($event)"
+                            x-on:pointerup="onOptionPointerUp($event, option)"
                             x-on:mousemove="highlight = index"
-                            :class="{
-                                'bg-primary-500/10 text-primary-600 dark:text-primary-400': index === highlight,
-                                'text-gray-700 dark:text-gray-200': index !== highlight,
-                            }"
+                            {{-- Neutral gray highlight matching Filament's Select
+                                 option (bg-gray-50 / dark:white-5), not a primary
+                                 tint; text colour stays constant. --}}
+                            :class="{ 'bg-gray-50 dark:bg-white/5': index === highlight }"
                             {{-- Roomier rows on touch (≈44px); compact on sm+ pointers. --}}
-                            class="flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 text-sm sm:py-1.5"
+                            class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2.5 text-sm text-gray-700 transition-colors duration-75 dark:text-gray-200 sm:py-2"
                         >
-                            <span x-text="option.label" class="font-medium tabular-nums"></span>
+                            <span x-text="option.label" class="tabular-nums"></span>
                             <span
                                 x-show="option.duration"
                                 x-text="option.duration"

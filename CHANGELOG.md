@@ -20,8 +20,13 @@ All notable changes to `filament-timepicker` will be documented in this file.
   (scrolling internally) instead of clipping off-screen; it re-positions on
   `visualViewport` resize/scroll (keyboard show/hide, pinch-zoom).
 - Mobile: dropdown options use a touch-friendly row height (≈44px), compact on
-  larger pointers (`sm:` breakpoint), and select on `pointerdown` so a tap commits
-  directly rather than relying on synthesized mouse events.
+  larger pointers (`sm:` breakpoint).
+- Mobile: a drag that starts on an option now scrolls the list instead of
+  selecting — options commit on `pointerup` only when the pointer barely moved
+  (tap vs. scroll), and `touch-pan-y` guarantees vertical scrolling.
+- UI: match Filament's own Select dropdown — the panel is pinned to the input
+  width, options use the neutral `bg-gray-50`/`dark:bg-white/5` highlight (not a
+  primary tint) with rounded rows and `p-1` list padding.
 - UX: an empty field opens with the slot nearest the current time highlighted
   (instead of always the first option); a committed value still highlights itself.
 - Fix: scroll the highlighted option into view on open (the previous index counted

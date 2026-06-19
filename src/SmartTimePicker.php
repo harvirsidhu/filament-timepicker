@@ -23,9 +23,6 @@ class SmartTimePicker extends Field implements HasAffixActions
     use Concerns\HasPlaceholder;
     use HasExtraAlpineAttributes;
 
-    /**
-     * @var view-string
-     */
     protected string $view = 'harvirsidhu-filament-timepicker::time-picker';
 
     protected int | Closure $interval = 15;
@@ -73,7 +70,7 @@ class SmartTimePicker extends Field implements HasAffixActions
                 $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
 
                 if ($parsed !== null && ! $component->isOnGrid($parsed)) {
-                    $fail(__('Choose a time at :interval-minute intervals.', ['interval' => $component->getInterval()]));
+                    $fail(__('harvirsidhu-filament-timepicker::time-picker.off_grid', ['interval' => $component->getInterval()]));
                 }
             };
         });

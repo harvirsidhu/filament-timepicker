@@ -225,6 +225,23 @@ TimeParser::format('15:30');    // "3:30 PM"
   so a value is either clean `H:i`/`H:i:s` or `null`.
 - The Alpine component is shipped as a Filament asset and **lazy-loaded with `x-load`**, so it
   costs nothing on pages that don't use it.
+- It follows the **ARIA combobox/listbox pattern** (`role`, `aria-expanded`,
+  `aria-activedescendant`, `aria-selected`), so keyboard navigation is announced by screen
+  readers.
+
+---
+
+## Translations
+
+All user-facing strings — the "no matching time" hint, the strict-mode validation message,
+and the `relativeTo` duration words ("hour", "mins") — live under the
+`harvirsidhu-filament-timepicker` namespace. Publish them to translate or override:
+
+```bash
+php artisan vendor:publish --tag=filament-timepicker-translations
+```
+
+Then edit `lang/vendor/filament-timepicker/<locale>/time-picker.php`.
 
 ---
 

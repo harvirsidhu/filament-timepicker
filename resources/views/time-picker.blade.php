@@ -54,6 +54,13 @@
                 displayFormat: @js($getDisplayFormat()),
                 isDisabled: @js($isDisabled),
                 relativeStatePath: @js($relativeStatePath),
+                fieldId: @js($getId()),
+                durationLabels: @js([
+                    'hour' => __('harvirsidhu-filament-timepicker::time-picker.duration.hour'),
+                    'hours' => __('harvirsidhu-filament-timepicker::time-picker.duration.hours'),
+                    'minute' => __('harvirsidhu-filament-timepicker::time-picker.duration.minute'),
+                    'minutes' => __('harvirsidhu-filament-timepicker::time-picker.duration.minutes'),
+                ]),
             })"
             x-on:keydown.escape.stop="isOpen && (close(), $event.preventDefault())"
             x-on:scroll.window.capture="isOpen && positionPanel()"
@@ -71,6 +78,12 @@
                 x-on:keydown.arrow-up.prevent="move(-1)"
                 x-on:keydown.enter.prevent.stop="selectHighlighted()"
                 x-on:keydown.tab="isOpen && selectHighlighted()"
+                role="combobox"
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                :aria-expanded="isOpen ? 'true' : 'false'"
+                :aria-controls="listboxId()"
+                :aria-activedescendant="activeDescendantId()"
                 {{
                     $getExtraInputAttributeBag()
                         ->merge([
@@ -97,18 +110,22 @@
                     x-cloak
                     x-transition.opacity.duration.100ms
                     :style="panelStyle"
+                    :id="listboxId()"
                     role="listbox"
+                    aria-label="{{ __('harvirsidhu-filament-timepicker::time-picker.listbox_label') }}"
                     class="fi-dropdown-panel fi-ti-panel max-h-60 w-max max-w-xs overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
                 >
                     <template x-if="! filtered.length">
                         <li class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            {{ __('No matching time') }}
+                            {{ __('harvirsidhu-filament-timepicker::time-picker.no_matching_time') }}
                         </li>
                     </template>
 
                     <template x-for="(option, index) in filtered" :key="option.value">
                         <li
+                            :id="optionId(index)"
                             role="option"
+                            :aria-selected="index === highlight ? 'true' : 'false'"
                             x-on:mousedown.prevent="select(option)"
                             x-on:mousemove="highlight = index"
                             :class="{

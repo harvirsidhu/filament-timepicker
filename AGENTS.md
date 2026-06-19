@@ -34,6 +34,12 @@ It was extracted from the `cliniclah-app` clinic project, which is its first con
   `wire:model`. The canonical value is written to the entangled `state` only on commit. This is
   deliberate — it stops Livewire echoing state back and clobbering the cursor. Don't "simplify"
   it to a direct `x-model="state"`.
+- **One translation namespace: `harvirsidhu-filament-timepicker::`.** All user-facing strings
+  live in `resources/lang/<locale>/time-picker.php`. Spatie's `hasTranslations()` would register
+  them under the package shortName (`filament-timepicker`), so the service provider *also*
+  `loadTranslationsFrom(...)` under the view namespace — use that one prefix everywhere (PHP
+  `__()`, the Blade view, and JS strings passed in via the `durationLabels` config). The JS holds
+  no hardcoded English; duration words come from the lang file through the Blade `x-data`.
 
 ## Public API — this is a stable contract
 

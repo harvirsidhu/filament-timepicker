@@ -20,6 +20,13 @@ export default function smartTimePicker(config) {
         displayFormat: config.displayFormat || 'g:i A',
         isDisabled: config.isDisabled || false,
         relativeStatePath: config.relativeStatePath || null,
+        fieldId: config.fieldId || null,
+        durationLabels: config.durationLabels || {
+            hour: 'hour',
+            hours: 'hours',
+            minute: 'min',
+            minutes: 'mins',
+        },
 
         display: '',
         isOpen: false,
@@ -95,7 +102,14 @@ export default function smartTimePicker(config) {
                 }
             }
 
-            if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+            if (
+                hour < 0 ||
+                hour > 23 ||
+                minute < 0 ||
+                minute > 59 ||
+                second < 0 ||
+                second > 59
+            ) {
                 return null
             }
 
@@ -157,11 +171,15 @@ export default function smartTimePicker(config) {
             const parts = []
 
             if (hours) {
-                parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`)
+                parts.push(
+                    `${hours} ${hours === 1 ? this.durationLabels.hour : this.durationLabels.hours}`,
+                )
             }
 
             if (minutes) {
-                parts.push(`${minutes} ${minutes === 1 ? 'min' : 'mins'}`)
+                parts.push(
+                    `${minutes} ${minutes === 1 ? this.durationLabels.minute : this.durationLabels.minutes}`,
+                )
             }
 
             return parts.join(' ')
@@ -175,7 +193,11 @@ export default function smartTimePicker(config) {
 
             for (let m = start; m <= end && m < 24 * 60; m += step) {
                 const value = this.fromMinutes(m)
-                options.push({ value, label: this.toDisplay(value), minutes: m })
+                options.push({
+                    value,
+                    label: this.toDisplay(value),
+                    minutes: m,
+                })
             }
 
             return options
@@ -217,7 +239,12 @@ export default function smartTimePicker(config) {
             }
 
             this.filtered = this.visibleOptions()
-            this.highlight = Math.max(0, this.filtered.findIndex((o) => o.value === this.parse(this.state)))
+            this.highlight = Math.max(
+                0,
+                this.filtered.findIndex(
+                    (o) => o.value === this.parse(this.state),
+                ),
+            )
             this.isOpen = true
             this.positionPanel()
             this.$nextTick(() => this.scrollToHighlight())
@@ -230,7 +257,14 @@ export default function smartTimePicker(config) {
         onInput(value) {
             this.display = value
 
-            const needle = value.trim().toLowerCase().replace(/\s/g, '')
+            // Normalize the typed separator (".", "h") to ":" before matching, so
+            // partial dotted/French input ("9.", "9.3", "9h3") filters live the
+            // same way "9:3" does — option labels/values are always colon-formed.
+            const needle = value
+                .trim()
+                .toLowerCase()
+                .replace(/\s/g, '')
+                .replace(/[.h]/g, ':')
             const base = this.visibleOptions()
             // Run the text through the parser too, so shorthand like "9pm" or
             // "330" (which never prefix-matches a formatted label) still surfaces
@@ -242,7 +276,10 @@ export default function smartTimePicker(config) {
                     ? base
                     : base.filter(
                           (option) =>
-                              option.label.toLowerCase().replace(/\s/g, '').startsWith(needle) ||
+                              option.label
+                                  .toLowerCase()
+                                  .replace(/\s/g, '')
+                                  .startsWith(needle) ||
                               option.value.startsWith(needle) ||
                               (parsed !== null && option.value === parsed),
                       )
@@ -302,6 +339,23 @@ export default function smartTimePicker(config) {
             this.close()
         },
 
+        // ---- ARIA wiring (combobox/listbox pattern) ----
+        listboxId() {
+            return this.fieldId ? `${this.fieldId}-listbox` : null
+        },
+
+        optionId(index) {
+            return this.fieldId ? `${this.fieldId}-option-${index}` : null
+        },
+
+        // The id of the currently highlighted option, announced to screen readers
+        // via aria-activedescendant; null when closed or empty.
+        activeDescendantId() {
+            return this.isOpen && this.filtered.length
+                ? this.optionId(this.highlight)
+                : null
+        },
+
         // Whether a canonical value lands on a generated slot. Mirrors
         // SmartTimePicker::isOnGrid() on the PHP side.
         isOnGrid(canonical) {
@@ -329,11 +383,23 @@ export default function smartTimePicker(config) {
 
         positionPanel() {
             const rect = this.$refs.input.getBoundingClientRect()
+            const margin = 4
+            const maxPanelHeight = 240 // matches max-h-60 (15rem)
+            const spaceBelow = window.innerHeight - rect.bottom
+
+            // Flip the panel above the input when there isn't room below and
+            // there's more room above — keeps the dropdown on screen in a tall
+            // form's last row.
+            const openUp = spaceBelow < maxPanelHeight && rect.top > spaceBelow
+            const vertical = openUp
+                ? `bottom: ${window.innerHeight - rect.top + margin}px;`
+                : `top: ${rect.bottom + margin}px;`
+
             // Teleported to <body> and fixed-positioned so it escapes the
             // overflow clipping of repeater rows and modals. z-index sits above
             // Filament's modal layer.
             this.panelStyle =
-                `position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px;` +
+                `position: fixed; left: ${rect.left}px; ${vertical}` +
                 ` min-width: ${rect.width}px; z-index: 9999;`
         },
 

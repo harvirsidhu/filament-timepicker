@@ -23,6 +23,12 @@ class FilamentTimepickerServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        // Spatie's hasTranslations() registers the lang files under the package
+        // shortName ("filament-timepicker"). Register them under the view
+        // namespace too so consumers reference a single, consistent prefix
+        // ("harvirsidhu-filament-timepicker::") for both views and strings.
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', static::$viewNamespace);
+
         // Ship the smart-time-picker Alpine component as an async, lazily
         // loaded asset. The field's Blade view pulls it in with
         // `x-load` + FilamentAsset::getAlpineComponentSrc(), so it only

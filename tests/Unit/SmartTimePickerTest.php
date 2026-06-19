@@ -75,6 +75,23 @@ it('fails validation for an off-grid time only in strict mode', function () {
         ->and($validate($loose, '12:01'))->toBeFalse(); // strict off → anything parseable passes
 });
 
+it('uses a translated, interval-aware message for off-grid values', function () {
+    $field = SmartTimePicker::make('start')->interval(30)->strict();
+
+    $validator = Validator::make(
+        ['start' => '12:01'],
+        ['start' => $field->getValidationRules()],
+    );
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->first('start'))->toBe('Choose a time at 30-minute intervals.');
+});
+
+it('resolves the package translation namespace', function () {
+    expect(__('harvirsidhu-filament-timepicker::time-picker.no_matching_time'))->toBe('No matching time')
+        ->and(__('harvirsidhu-filament-timepicker::time-picker.duration.hours'))->toBe('hours');
+});
+
 it('keeps native() and timezone() as no-ops for drop-in parity', function () {
     $field = SmartTimePicker::make('start')->native(false)->timezone('Asia/Kuala_Lumpur');
 

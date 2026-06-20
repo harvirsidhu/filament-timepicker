@@ -9,6 +9,13 @@
  * The parsing + display rules mirror src/Support/TimeParser.php — keep the two
  * in lockstep.
  */
+
+// Trailing meridiem: "p", "pm", "p.m.", optional leading space. No `g` flag, so
+// the shared instance is safe to reuse across match / replace / test.
+const MERIDIEM = /\s*([ap])\.?m?\.?$/
+const MINUTES_IN_DAY = 24 * 60
+const pad2 = (n) => String(n).padStart(2, '0')
+
 export default function smartTimePicker(config) {
     return {
         state: config.state, // entangled canonical "H:i" / "H:i:s" (or null)
@@ -84,11 +91,11 @@ export default function smartTimePicker(config) {
             }
 
             let meridiem = null
-            const meridiemMatch = s.match(/\s*([ap])\.?m?\.?$/)
+            const meridiemMatch = s.match(MERIDIEM)
 
             if (meridiemMatch) {
                 meridiem = meridiemMatch[1]
-                s = s.replace(/\s*([ap])\.?m?\.?$/, '').trim()
+                s = s.replace(MERIDIEM, '').trim()
             }
 
             let hour = null
@@ -136,11 +143,9 @@ export default function smartTimePicker(config) {
                 return null
             }
 
-            const pad = (n) => String(n).padStart(2, '0')
-
             return this.seconds
-                ? `${pad(hour)}:${pad(minute)}:${pad(second)}`
-                : `${pad(hour)}:${pad(minute)}`
+                ? `${pad2(hour)}:${pad2(minute)}:${pad2(second)}`
+                : `${pad2(hour)}:${pad2(minute)}`
         },
 
         // ---- display formatting (PHP date() token subset) ----
@@ -150,15 +155,14 @@ export default function smartTimePicker(config) {
             const minute = parseInt(parts[1], 10)
             const second = parseInt(parts[2] || '0', 10)
             const hour12 = hour % 12 || 12
-            const pad = (n) => String(n).padStart(2, '0')
 
             const tokens = {
                 g: String(hour12),
                 G: String(hour),
-                h: pad(hour12),
-                H: pad(hour),
-                i: pad(minute),
-                s: pad(second),
+                h: pad2(hour12),
+                H: pad2(hour),
+                i: pad2(minute),
+                s: pad2(second),
                 A: hour < 12 ? 'AM' : 'PM',
                 a: hour < 12 ? 'am' : 'pm',
             }
@@ -178,8 +182,7 @@ export default function smartTimePicker(config) {
         },
 
         fromMinutes(total) {
-            const pad = (n) => String(n).padStart(2, '0')
-            const value = `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
+            const value = `${pad2(Math.floor(total / 60))}:${pad2(total % 60)}`
 
             return this.seconds ? `${value}:00` : value
         },
@@ -211,10 +214,10 @@ export default function smartTimePicker(config) {
         generateOptions() {
             const step = this.interval
             const start = this.min ? this.minutesOf(this.min) : 0
-            const end = this.max ? this.minutesOf(this.max) : 24 * 60 - 1
+            const end = this.max ? this.minutesOf(this.max) : MINUTES_IN_DAY - 1
             const options = []
 
-            for (let m = start; m <= end && m < 24 * 60; m += step) {
+            for (let m = start; m <= end && m < MINUTES_IN_DAY; m += step) {
                 const value = this.fromMinutes(m)
                 options.push({
                     value,
@@ -269,12 +272,10 @@ export default function smartTimePicker(config) {
             this.highlight = this.initialHighlightIndex()
             this.isOpen = true
 
-            // Position once now, then again after the DOM updates and after the
-            // next frame. Focusing inside a Filament modal can still be settling
-            // its layout (open transition, scroll-into-view) when open() fires, so
-            // the first measurement of the input can be stale and pick the wrong
-            // flip direction. Re-measuring after paint locks it to the final spot
-            // — the same correction a manual scroll was triggering by hand.
+            // Position now, then again after paint. Inside a Filament modal the
+            // layout can still be settling (open transition, scroll-into-view)
+            // when open() fires, so the first measurement can be stale and flip
+            // the wrong way; re-measuring locks it to the final spot.
             this.positionPanel()
             this.$nextTick(() => {
                 this.positionPanel()
@@ -541,11 +542,11 @@ export default function smartTimePicker(config) {
             let s = String(value).trim().toLowerCase()
             let meridiem = ''
 
-            const found = s.match(/\s*([ap])\.?m?\.?$/)
+            const found = s.match(MERIDIEM)
 
             if (found) {
                 meridiem = ` ${found[1]}`
-                s = s.replace(/\s*([ap])\.?m?\.?$/, '').trim()
+                s = s.replace(MERIDIEM, '').trim()
             }
 
             const partial = s.match(/^(\d{1,2})[:.h](\d)$/)
@@ -554,7 +555,7 @@ export default function smartTimePicker(config) {
         },
 
         hasMeridiem(value) {
-            return /\s*([ap])\.?m?\.?$/.test(String(value).trim().toLowerCase())
+            return MERIDIEM.test(String(value).trim().toLowerCase())
         },
 
         // The other 12-hour reading of a canonical value: 1–11 ⇄ 13–23, 12 ⇄ 00.
@@ -571,9 +572,7 @@ export default function smartTimePicker(config) {
                 return null
             }
 
-            const pad = (n) => String(n).padStart(2, '0')
-
-            return [hour, ...parts.slice(1)].map(pad).join(':')
+            return [hour, ...parts.slice(1)].map(pad2).join(':')
         },
 
         customOption(value) {

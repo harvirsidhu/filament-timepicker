@@ -31,7 +31,9 @@ class SmartTimePicker extends Field implements HasAffixActions
 
     protected string | Carbon | Closure | null $maxTime = null;
 
-    protected string | Closure | null $relativeTo = null;
+    protected string | Closure | null $durationFrom = null;
+
+    protected int | Closure | null $defaultDuration = null;
 
     protected string | Closure $displayFormat = 'g:i a';
 
@@ -107,13 +109,26 @@ class SmartTimePicker extends Field implements HasAffixActions
     }
 
     /**
-     * Show duration labels ("30 mins", "1 hour") relative to a sibling field,
-     * and only offer times after that field's value. Pass the sibling's name
-     * (e.g. 'start_time'); repeater/group nesting is resolved automatically.
+     * Measure this field against a sibling time field: only offer times after
+     * it, and label each option with the gap ("(30 mins)", "(1h 30m)"). Pass the
+     * sibling's name (e.g. 'start_time'); repeater/group nesting is resolved
+     * automatically. Pair with defaultDuration() to auto-fill this field.
      */
-    public function relativeTo(string | Closure | null $statePath): static
+    public function durationFrom(string | Closure | null $statePath): static
     {
-        $this->relativeTo = $statePath;
+        $this->durationFrom = $statePath;
+
+        return $this;
+    }
+
+    /**
+     * When the durationFrom() field is set or changed, auto-fill this field with
+     * (that time + $minutes). The user can still override it afterwards. No-op
+     * unless durationFrom() is also configured.
+     */
+    public function defaultDuration(int | Closure | null $minutes): static
+    {
+        $this->defaultDuration = $minutes;
 
         return $this;
     }
@@ -226,18 +241,29 @@ class SmartTimePicker extends Field implements HasAffixActions
     }
 
     /**
-     * Absolute Livewire state path of the sibling field used by relativeTo,
-     * or null when relativeTo isn't configured.
+     * Absolute Livewire state path of the sibling field used by durationFrom(),
+     * or null when it isn't configured.
      */
-    public function getRelativeStatePath(): ?string
+    public function getDurationFromStatePath(): ?string
     {
-        $relativeTo = $this->evaluate($this->relativeTo);
+        $durationFrom = $this->evaluate($this->durationFrom);
 
-        if (blank($relativeTo)) {
+        if (blank($durationFrom)) {
             return null;
         }
 
-        return $this->resolveRelativeStatePath($relativeTo);
+        return $this->resolveRelativeStatePath($durationFrom);
+    }
+
+    /**
+     * Default duration in minutes for defaultDuration() auto-fill, or null when
+     * not set. Clamped to at least 1.
+     */
+    public function getDefaultDuration(): ?int
+    {
+        $minutes = $this->evaluate($this->defaultDuration);
+
+        return $minutes === null ? null : max(1, (int) $minutes);
     }
 
     protected function normalizeBoundary(string | Carbon | Closure | null $value): ?string

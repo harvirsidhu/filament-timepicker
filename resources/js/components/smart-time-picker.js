@@ -26,7 +26,8 @@ export default function smartTimePicker(config) {
         strict: config.strict || false,
         displayFormat: config.displayFormat || 'g:i a',
         isDisabled: config.isDisabled || false,
-        relativeStatePath: config.relativeStatePath || null,
+        durationFromStatePath: config.durationFromStatePath || null,
+        defaultDuration: config.defaultDuration || null,
         fieldId: config.fieldId || null,
         durationLabels: config.durationLabels || {
             hour: 'hour',
@@ -57,6 +58,16 @@ export default function smartTimePicker(config) {
                     this.syncFromState()
                 }
             })
+
+            // Auto-fill from the durationFrom() field: when it is set or changed,
+            // set this field to (that time + defaultDuration). Fires only on
+            // change, so an existing value on an edit form is left untouched; the
+            // user can still override afterwards.
+            if (this.durationFromStatePath && this.defaultDuration) {
+                this.$wire.$watch(this.durationFromStatePath, () =>
+                    this.applyDefaultDuration(),
+                )
+            }
 
             // Re-position while the panel is open when the mobile soft keyboard
             // opens/closes or the page is pinch-zoomed — these change the visual
@@ -235,13 +246,29 @@ export default function smartTimePicker(config) {
         },
 
         referenceMinutes() {
-            if (!this.relativeStatePath) {
+            if (!this.durationFromStatePath) {
                 return null
             }
 
-            const parsed = this.parse(this.$wire.get(this.relativeStatePath))
+            const parsed = this.parse(this.$wire.get(this.durationFromStatePath))
 
             return parsed === null ? null : this.minutesOf(parsed)
+        },
+
+        // Set this field to (durationFrom value + defaultDuration), capped at
+        // max (or end of day). No-op when the source is empty/invalid.
+        applyDefaultDuration() {
+            const reference = this.referenceMinutes()
+
+            if (reference === null) {
+                return
+            }
+
+            const cap = this.max ? this.minutesOf(this.max) : MINUTES_IN_DAY - 1
+            const end = Math.min(reference + this.defaultDuration, cap)
+
+            this.state = this.fromMinutes(end)
+            this.syncFromState()
         },
 
         visibleOptions() {

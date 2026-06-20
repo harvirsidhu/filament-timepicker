@@ -155,24 +155,39 @@ SmartTimePicker::make('start_time')
 
 ### Start & end times, with live duration labels
 
-Point an "end time" at its "start time" with `relativeTo()`. The dropdown then only offers times
-*after* the start, and labels each option with how long the gap would be:
+Point an "end time" at its "start time" with `durationFrom()`. The dropdown then only offers
+times *after* the start, and labels each option with how long the gap would be:
 
 ```php
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
-
 SmartTimePicker::make('start_time')
     ->live(),   // make it ->live() so end_time updates as it changes
 
 SmartTimePicker::make('end_time')
-    ->relativeTo('start_time'),   // options read "(30 mins)", "(1 hour)", "(1h 30m)" …
+    ->durationFrom('start_time'),   // options read "(30 mins)", "(1 hour)", "(1h 30m)" …
 ```
 
 Each option is labelled with the gap from the start time: up to an hour in friendly words
 (`(30 mins)`, `(1 hour)`), and past an hour in a compact form (`(1h 30m)`, `(2h)`) so longer
 gaps stay short. Pass the sibling field's **name** (`'start_time'`), not its full path —
-`relativeTo()` resolves it for you, even inside repeaters and nested groups.
+`durationFrom()` resolves it for you, even inside repeaters and nested groups.
+
+### Auto-fill the end time from a default duration
+
+Pair `durationFrom()` with `defaultDuration()` so picking (or changing) the start time fills the
+end time automatically. The user can still override it afterwards:
+
+```php
+SmartTimePicker::make('start_time')
+    ->live(),
+
+SmartTimePicker::make('end_time')
+    ->durationFrom('start_time')
+    ->defaultDuration(30);   // pick 12:00 pm → end_time becomes 12:30 pm
+```
+
+Choose any default — `->defaultDuration(10)` lands on 12:10 pm. It fires only when the start
+time changes, so an existing end time on an edit form is left untouched, and the value is capped
+at `maxTime()` (or the end of the day) if the sum would overflow.
 
 ### Show seconds
 
@@ -219,7 +234,8 @@ any off-grid value that bypasses the browser (a paste, a programmatic default, a
 | `interval(int\|Closure)` | `15` | Minutes between dropdown suggestions. |
 | `minTime(string\|Carbon\|Closure\|null)` | `null` | Earliest selectable time (inclusive). |
 | `maxTime(string\|Carbon\|Closure\|null)` | `null` | Latest selectable time (inclusive). |
-| `relativeTo(string\|Closure\|null)` | `null` | Sibling field name; adds duration labels and a floor. |
+| `durationFrom(string\|Closure\|null)` | `null` | Sibling field name; floors options after it and adds duration labels. |
+| `defaultDuration(int\|Closure\|null)` | `null` | Minutes; auto-fills this field when the `durationFrom` field changes. |
 | `displayFormat(string\|Closure)` | `'g:i a'` | How the value is shown, in PHP `date()` tokens. |
 | `seconds(bool\|Closure)` | `false` | Store/display seconds (`H:i:s`). |
 | `strict(bool\|Closure)` | `false` | Confine values to the grid; off-grid times fail validation. |
@@ -294,7 +310,7 @@ The value didn't parse. Check the [parsing table](#how-input-parsing-works) — 
 unrecognised normalizes to `null`. If you're in `strict()` mode, an off-grid time is rejected by
 design (with a validation message when it bypasses the browser).
 
-**`relativeTo()` labels aren't updating.**
+**`durationFrom()` labels or `defaultDuration()` auto-fill aren't updating.**
 Make the source field `->live()` so its value propagates as it changes.
 
 ---
@@ -302,7 +318,7 @@ Make the source field `->live()` so its value propagates as it changes.
 ## Translations
 
 Every user-facing string — the "no matching time" hint, the strict-mode validation message, and
-the `relativeTo` duration words ("hour", "mins") — lives under the
+the `durationFrom` duration words ("hour", "mins", "h", "m") — lives under the
 `harvirsidhu-filament-timepicker` namespace. Publish them to translate or override:
 
 ```bash

@@ -5,14 +5,14 @@ All notable changes to `filament-timepicker` will be documented in this file.
 ## Unreleased
 
 - Initial development: `SmartTimePicker` form field with free-text parsing,
-  interval-based suggestion dropdown, keyboard navigation, and `relativeTo`
+  interval-based suggestion dropdown, keyboard navigation, and `durationFrom`
   duration labels.
 - Fix: live filtering now normalizes `.`/`h` separators, so partial dotted/French
   input (`9.`, `9.3`, `9h3`) narrows the dropdown the same way `9:3` does.
 - Accessibility: implement the ARIA combobox/listbox pattern (`role`,
   `aria-expanded`, `aria-controls`, `aria-activedescendant`, `aria-selected`).
 - i18n: move all user-facing strings (dropdown empty state, strict-mode validation
-  message, `relativeTo` duration words) into publishable translations under the
+  message, `durationFrom` duration words) into publishable translations under the
   `harvirsidhu-filament-timepicker` namespace.
 - UX: the suggestion panel now flips above the input when there isn't room below.
 - Mobile: the panel is measured against the visual viewport, so it stays in view
@@ -33,7 +33,10 @@ All notable changes to `filament-timepicker` will be documented in this file.
   primary tint) with rounded rows and `p-1` list padding.
 - UX: focusing or clicking the field now selects the whole value, so the next
   keystroke replaces it (matches Google Calendar's time field).
-- UX: `relativeTo` duration labels now use a hybrid format shown in brackets —
+- Feature: `durationFrom()` (floors the dropdown after a sibling time and labels
+  each option with the gap) plus `defaultDuration()` — auto-fills this field with
+  the sibling's time + N minutes whenever the sibling changes, still overridable.
+- UX: `durationFrom` duration labels now use a hybrid format shown in brackets —
   friendly words up to an hour (`(30 mins)`, `(1 hour)`), compact past an hour
   (`(1h 30m)`, `(2h)`). Adds `duration.short_hour` / `short_minute` translations.
 - Change: the default display format is now `g:i a` (lowercase, e.g. `3:30 pm`)

@@ -28,6 +28,20 @@ it('defaults display to the non-padded, lowercase 12-hour format', function () {
     expect(SmartTimePicker::make('start')->getDisplayFormat())->toBe('g:i a');
 });
 
+it('exposes the default duration, clamped to at least one minute', function () {
+    expect(SmartTimePicker::make('end')->getDefaultDuration())->toBeNull()
+        ->and(SmartTimePicker::make('end')->defaultDuration(30)->getDefaultDuration())->toBe(30)
+        ->and(SmartTimePicker::make('end')->defaultDuration(0)->getDefaultDuration())->toBe(1);
+});
+
+it('stores the durationFrom sibling path', function () {
+    $durationFrom = (function () {
+        return $this->durationFrom;
+    })->call(SmartTimePicker::make('end')->durationFrom('start'));
+
+    expect($durationFrom)->toBe('start');
+});
+
 it('exposes the seconds flag', function () {
     expect(SmartTimePicker::make('start')->getSeconds())->toBeFalse()
         ->and(SmartTimePicker::make('start')->seconds()->getSeconds())->toBeTrue();

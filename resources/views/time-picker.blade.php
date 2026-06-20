@@ -14,7 +14,7 @@
     $suffixLabel = $getSuffixLabel();
     $statePath = $getStatePath();
     $placeholder = $getPlaceholder();
-    $relativeStatePath = $getRelativeStatePath();
+    $durationFromStatePath = $getDurationFromStatePath();
 @endphp
 
 <x-dynamic-component
@@ -59,7 +59,8 @@
                 strict: @js($isStrict()),
                 displayFormat: @js($getDisplayFormat()),
                 isDisabled: @js($isDisabled),
-                relativeStatePath: @js($relativeStatePath),
+                durationFromStatePath: @js($durationFromStatePath),
+                defaultDuration: @js($getDefaultDuration()),
                 fieldId: @js($getId()),
                 durationLabels: @js([
                     'hour' => __('harvirsidhu-filament-timepicker::time-picker.duration.hour'),

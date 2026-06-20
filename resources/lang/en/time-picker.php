@@ -11,7 +11,7 @@ return [
     // Validation message in strict() mode for an off-grid time.
     'off_grid' => 'Choose a time at :interval-minute intervals.',
 
-    // Duration labels for relativeTo() options. Up to an hour the long words are
+    // Duration labels for durationFrom() options. Up to an hour the long words are
     // used ("30 mins", "1 hour"); past an hour it switches to the compact form
     // ("1h 30m", "2h") so longer gaps stay short. Shown in brackets in the list.
     'duration' => [

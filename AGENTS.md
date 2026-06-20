@@ -6,7 +6,7 @@ Briefing for any coding-agent session working in this package. Read this first.
 
 `harvirsidhu/filament-timepicker` — a standalone Filament v4/v5 **form field** package
 providing `SmartTimePicker`, a smart, type-ahead time combobox: free-text parsing
-(`3p`, `330`, `3:30 PM`), an interval dropdown, keyboard nav, and optional `relativeTo`
+(`3p`, `330`, `3:30 PM`), an interval dropdown, keyboard nav, and optional `durationFrom`
 duration labels. It is **domain-agnostic** — it knows nothing about clinics, appointments, or
 availability. Bounds and relative behaviour are supplied by the consuming form.
 
@@ -57,7 +57,8 @@ deliberately:
 ->interval(int|Closure)                          // default 15
 ->minTime(string|Carbon|Closure|null)            // inclusive floor
 ->maxTime(string|Carbon|Closure|null)            // inclusive ceiling
-->relativeTo(string|Closure|null)                // sibling field → duration labels + floor
+->durationFrom(string|Closure|null)              // sibling field → duration labels + floor
+->defaultDuration(int|Closure|null)              // auto-fill (durationFrom value + minutes) on change
 ->displayFormat(string|Closure)                  // PHP date() tokens, default 'g:i a'
 ->seconds(bool|Closure)                          // default false
 ->strict(bool|Closure)                           // default false — reject off-grid times

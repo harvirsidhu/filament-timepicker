@@ -33,6 +33,8 @@ export default function smartTimePicker(config) {
             hours: 'hours',
             minute: 'min',
             minutes: 'mins',
+            shortHour: 'h',
+            shortMinute: 'm',
         },
 
         display: '',
@@ -187,28 +189,31 @@ export default function smartTimePicker(config) {
             return this.seconds ? `${value}:00` : value
         },
 
+        // Hybrid wording: up to an hour, friendly words ("30 mins", "1 hour");
+        // past an hour, the compact form ("1h 30m", "2h") so long gaps stay
+        // short. The brackets are added in the view, not here.
         formatDuration(mins) {
             if (mins <= 0) {
                 return ''
             }
 
+            const labels = this.durationLabels
+
+            if (mins < 60) {
+                return `${mins} ${mins === 1 ? labels.minute : labels.minutes}`
+            }
+
+            if (mins === 60) {
+                return `1 ${labels.hour}`
+            }
+
             const hours = Math.floor(mins / 60)
             const minutes = mins % 60
-            const parts = []
+            const hourPart = `${hours}${labels.shortHour}`
 
-            if (hours) {
-                parts.push(
-                    `${hours} ${hours === 1 ? this.durationLabels.hour : this.durationLabels.hours}`,
-                )
-            }
-
-            if (minutes) {
-                parts.push(
-                    `${minutes} ${minutes === 1 ? this.durationLabels.minute : this.durationLabels.minutes}`,
-                )
-            }
-
-            return parts.join(' ')
+            return minutes
+                ? `${hourPart} ${minutes}${labels.shortMinute}`
+                : hourPart
         },
 
         generateOptions() {

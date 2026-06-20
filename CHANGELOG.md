@@ -33,6 +33,9 @@ All notable changes to `filament-timepicker` will be documented in this file.
   primary tint) with rounded rows and `p-1` list padding.
 - UX: focusing or clicking the field now selects the whole value, so the next
   keystroke replaces it (matches Google Calendar's time field).
+- UX: `relativeTo` duration labels now use a hybrid format shown in brackets —
+  friendly words up to an hour (`(30 mins)`, `(1 hour)`), compact past an hour
+  (`(1h 30m)`, `(2h)`). Adds `duration.short_hour` / `short_minute` translations.
 - Change: the default display format is now `g:i a` (lowercase, e.g. `3:30 pm`)
   instead of `g:i A` (`3:30 PM`). Set `->displayFormat('g:i A')` to keep uppercase.
 - UX: an empty field opens with the slot nearest the current time highlighted

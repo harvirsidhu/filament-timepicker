@@ -39,8 +39,8 @@ SmartTimePicker::make('start_time')
 - 📋 **A suggestion dropdown** at any `interval` you choose, filtered live as the user types.
 - 🧭 **Full keyboard control** — arrow keys to move, Enter/Tab to pick, Esc to close.
 - 🕒 **Min / max bounds** — only offer times inside a window (e.g. opening hours).
-- ⏱️ **Relative duration hints** — show `30 mins`, `1 hour 15 mins` next to each option, ideal
-  for an "end time" that depends on a "start time".
+- ⏱️ **Relative duration hints** — show `(30 mins)`, `(1 hour)`, `(1h 30m)` next to each option,
+  ideal for an "end time" that depends on a "start time".
 - 🔒 **Optional strict mode** — confine values to the grid and reject anything off it.
 - 🌍 **Wall-clock safe** — a 3 PM slot is always stored as `15:00`. No surprise timezone shifts.
 - 🎨 **Native Filament look** — same input chrome, light/dark aware, screen-reader friendly.
@@ -166,11 +166,13 @@ SmartTimePicker::make('start_time')
     ->live(),   // make it ->live() so end_time updates as it changes
 
 SmartTimePicker::make('end_time')
-    ->relativeTo('start_time'),   // options read "30 mins", "1 hour", "1 hour 15 mins" …
+    ->relativeTo('start_time'),   // options read "(30 mins)", "(1 hour)", "(1h 30m)" …
 ```
 
-Pass the sibling field's **name** (`'start_time'`), not its full path — `relativeTo()` resolves
-it for you, even inside repeaters and nested groups.
+Each option is labelled with the gap from the start time: up to an hour in friendly words
+(`(30 mins)`, `(1 hour)`), and past an hour in a compact form (`(1h 30m)`, `(2h)`) so longer
+gaps stay short. Pass the sibling field's **name** (`'start_time'`), not its full path —
+`relativeTo()` resolves it for you, even inside repeaters and nested groups.
 
 ### Show seconds
 

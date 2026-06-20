@@ -66,6 +66,8 @@
                     'hours' => __('harvirsidhu-filament-timepicker::time-picker.duration.hours'),
                     'minute' => __('harvirsidhu-filament-timepicker::time-picker.duration.minute'),
                     'minutes' => __('harvirsidhu-filament-timepicker::time-picker.duration.minutes'),
+                    'shortHour' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_hour'),
+                    'shortMinute' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_minute'),
                 ]),
             })"
             x-on:keydown.escape.stop="isOpen && (close(), $event.preventDefault())"
@@ -153,7 +155,7 @@
                             <span x-text="option.label" class="tabular-nums"></span>
                             <span
                                 x-show="option.duration"
-                                x-text="option.duration"
+                                x-text="'(' + option.duration + ')'"
                                 class="text-xs text-gray-400 dark:text-gray-500 tabular-nums"
                             ></span>
                         </li>

@@ -76,8 +76,8 @@
             <input
                 x-ref="input"
                 x-model="display"
-                x-on:focus="open()"
-                x-on:click="open()"
+                x-on:focus="open(); selectAll()"
+                x-on:click="open(); selectAll()"
                 x-on:input="onInput($event.target.value)"
                 x-on:blur="onBlur()"
                 x-on:keydown.arrow-down.prevent="move(1)"

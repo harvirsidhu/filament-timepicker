@@ -31,6 +31,8 @@ All notable changes to `filament-timepicker` will be documented in this file.
 - UI: match Filament's own Select dropdown — the panel is pinned to the input
   width, options use the neutral `bg-gray-50`/`dark:bg-white/5` highlight (not a
   primary tint) with rounded rows and `p-1` list padding.
+- UX: focusing or clicking the field now selects the whole value, so the next
+  keystroke replaces it (matches Google Calendar's time field).
 - UX: an empty field opens with the slot nearest the current time highlighted
   (instead of always the first option); a committed value still highlights itself.
 - Fix: scroll the highlighted option into view on open (the previous index counted

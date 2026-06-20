@@ -327,6 +327,15 @@ export default function smartTimePicker(config) {
             this.isOpen = false
         },
 
+        // Highlight the whole value on focus/click so the next keystroke replaces
+        // it — people retype a time wholesale rather than editing one character
+        // (matches Google Calendar's time field). Bound to both focus and click:
+        // a mouse focus would otherwise have its selection cleared by the trailing
+        // mouseup, and click fires after that, so the selection sticks.
+        selectAll() {
+            this.$refs.input.select()
+        },
+
         onInput(value) {
             this.display = value
 

@@ -33,7 +33,7 @@ class SmartTimePicker extends Field implements HasAffixActions
 
     protected string | Closure | null $relativeTo = null;
 
-    protected string | Closure $displayFormat = 'g:i A';
+    protected string | Closure $displayFormat = 'g:i a';
 
     protected bool | Closure $hasSeconds = false;
 

@@ -58,7 +58,7 @@ deliberately:
 ->minTime(string|Carbon|Closure|null)            // inclusive floor
 ->maxTime(string|Carbon|Closure|null)            // inclusive ceiling
 ->relativeTo(string|Closure|null)                // sibling field → duration labels + floor
-->displayFormat(string|Closure)                  // PHP date() tokens, default 'g:i A'
+->displayFormat(string|Closure)                  // PHP date() tokens, default 'g:i a'
 ->seconds(bool|Closure)                          // default false
 ->strict(bool|Closure)                           // default false — reject off-grid times
 ->native(bool|Closure)        // NO-OP — drop-in parity with Filament TimePicker

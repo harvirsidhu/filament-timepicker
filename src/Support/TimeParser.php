@@ -90,14 +90,14 @@ class TimeParser
     }
 
     /**
-     * Format a stored `H:i`/`H:i:s` value for display, e.g. "15:30" -> "3:30 PM".
+     * Format a stored `H:i`/`H:i:s` value for display, e.g. "15:30" -> "3:30 pm".
      * Returns null for blank/invalid input so the field shows an empty box.
      *
-     * `$displayFormat` uses PHP date() tokens. The default `g:i A` gives the
-     * non-padded, 12-hour look ("3:30 PM"); pass `h:i A` for a
-     * zero-padded hour ("03:30 PM").
+     * `$displayFormat` uses PHP date() tokens. The default `g:i a` gives the
+     * non-padded, lowercase 12-hour look ("3:30 pm"); pass `g:i A` for
+     * uppercase ("3:30 PM") or `h:i a` for a zero-padded hour ("03:30 pm").
      */
-    public static function format(?string $value, string $displayFormat = 'g:i A'): ?string
+    public static function format(?string $value, string $displayFormat = 'g:i a'): ?string
     {
         $canonical = static::parse($value, seconds: true);
 

@@ -67,10 +67,10 @@ it('emits seconds when requested', function () {
 it('formats canonical values for display', function (?string $input, ?string $expected) {
     expect(TimeParser::format($input))->toBe($expected);
 })->with([
-    '15:30' => ['15:30', '3:30 PM'],
-    '09:00' => ['09:00', '9:00 AM'],
-    '00:00' => ['00:00', '12:00 AM'],
-    '12:00' => ['12:00', '12:00 PM'],
+    '15:30' => ['15:30', '3:30 pm'],
+    '09:00' => ['09:00', '9:00 am'],
+    '00:00' => ['00:00', '12:00 am'],
+    '12:00' => ['12:00', '12:00 pm'],
     'blank' => ['', null],
     'null' => [null, null],
 ]);

@@ -17,7 +17,7 @@ export default function smartTimePicker(config) {
         max: config.max || null,
         seconds: config.seconds || false,
         strict: config.strict || false,
-        displayFormat: config.displayFormat || 'g:i A',
+        displayFormat: config.displayFormat || 'g:i a',
         isDisabled: config.isDisabled || false,
         relativeStatePath: config.relativeStatePath || null,
         fieldId: config.fieldId || null,

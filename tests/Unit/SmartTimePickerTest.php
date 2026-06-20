@@ -24,8 +24,8 @@ it('treats blank boundaries as null', function () {
         ->and(SmartTimePicker::make('start')->maxTime('')->getMaxTime())->toBeNull();
 });
 
-it('defaults display to the non-padded 12-hour format', function () {
-    expect(SmartTimePicker::make('start')->getDisplayFormat())->toBe('g:i A');
+it('defaults display to the non-padded, lowercase 12-hour format', function () {
+    expect(SmartTimePicker::make('start')->getDisplayFormat())->toBe('g:i a');
 });
 
 it('exposes the seconds flag', function () {

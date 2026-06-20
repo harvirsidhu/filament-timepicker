@@ -97,12 +97,12 @@ still ends up stored cleanly. Here's the mapping:
 
 | The user types  | Stored as | Displayed as |
 |-----------------|-----------|--------------|
-| `9`             | `09:00`   | 9:00 AM      |
-| `3p`            | `15:00`   | 3:00 PM      |
-| `330`           | `03:30`   | 3:30 AM      |
-| `1530`          | `15:30`   | 3:30 PM      |
-| `3:30 PM`       | `15:30`   | 3:30 PM      |
-| `9.30` / `9h30` | `09:30`   | 9:30 AM      |
+| `9`             | `09:00`   | 9:00 am      |
+| `3p`            | `15:00`   | 3:00 pm      |
+| `330`           | `03:30`   | 3:30 am      |
+| `1530`          | `15:30`   | 3:30 pm      |
+| `3:30 PM`       | `15:30`   | 3:30 pm      |
+| `9.30` / `9h30` | `09:30`   | 9:30 am      |
 | `nonsense`      | *rejected* | —           |
 
 **Separators are flexible.** In the `hh:mm` part you can use a colon, a dot, or an `h` — so
@@ -123,7 +123,7 @@ for you:
 
 ```php
 SmartTimePicker::make('start_time')
-    ->default('9am');   // stored as 09:00, shown as "9:00 AM"
+    ->default('9am');   // stored as 09:00, shown as "9:00 am"
 ```
 
 `->default('15:30')`, `->default('330')`, and `->default('3:30 PM')` all work. For a dynamic
@@ -183,10 +183,11 @@ SmartTimePicker::make('alarm_at')
 ### Change how the time is displayed
 
 The visible text uses [PHP `date()` tokens](https://www.php.net/manual/en/datetime.format.php).
-The default is `g:i A` (e.g. *3:30 PM*):
+The default is `g:i a` (e.g. *3:30 pm*):
 
 ```php
-SmartTimePicker::make('start_time')->displayFormat('h:i A');  // 03:30 PM
+SmartTimePicker::make('start_time')->displayFormat('g:i A');  // 3:30 PM (uppercase)
+SmartTimePicker::make('start_time')->displayFormat('h:i a');  // 03:30 pm (padded hour)
 SmartTimePicker::make('start_time')->displayFormat('H:i');    // 15:30 (24-hour)
 ```
 
@@ -217,7 +218,7 @@ any off-grid value that bypasses the browser (a paste, a programmatic default, a
 | `minTime(string\|Carbon\|Closure\|null)` | `null` | Earliest selectable time (inclusive). |
 | `maxTime(string\|Carbon\|Closure\|null)` | `null` | Latest selectable time (inclusive). |
 | `relativeTo(string\|Closure\|null)` | `null` | Sibling field name; adds duration labels and a floor. |
-| `displayFormat(string\|Closure)` | `'g:i A'` | How the value is shown, in PHP `date()` tokens. |
+| `displayFormat(string\|Closure)` | `'g:i a'` | How the value is shown, in PHP `date()` tokens. |
 | `seconds(bool\|Closure)` | `false` | Store/display seconds (`H:i:s`). |
 | `strict(bool\|Closure)` | `false` | Confine values to the grid; off-grid times fail validation. |
 | `native(bool\|Closure)` | — | **No-op.** Accepted for drop-in parity with Filament's `TimePicker`. |
@@ -238,7 +239,7 @@ TimeParser::parse('3:30 pm');   // "15:30"
 TimeParser::parse('930');       // "09:30"
 TimeParser::parse('9.30');      // "09:30"  (dot and "h" separators too)
 TimeParser::parse('nope');      // null
-TimeParser::format('15:30');    // "3:30 PM"
+TimeParser::format('15:30');    // "3:30 pm"
 ```
 
 ---

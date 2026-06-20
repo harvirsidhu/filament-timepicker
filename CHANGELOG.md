@@ -33,6 +33,8 @@ All notable changes to `filament-timepicker` will be documented in this file.
   primary tint) with rounded rows and `p-1` list padding.
 - UX: focusing or clicking the field now selects the whole value, so the next
   keystroke replaces it (matches Google Calendar's time field).
+- Change: the default display format is now `g:i a` (lowercase, e.g. `3:30 pm`)
+  instead of `g:i A` (`3:30 PM`). Set `->displayFormat('g:i A')` to keep uppercase.
 - UX: an empty field opens with the slot nearest the current time highlighted
   (instead of always the first option); a committed value still highlights itself.
 - Fix: scroll the highlighted option into view on open (the previous index counted

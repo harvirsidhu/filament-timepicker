@@ -189,11 +189,16 @@ Choose any default — `->defaultDuration(10)` lands on 12:10 pm. It fires only 
 time changes, so an existing end time on an edit form is left untouched, and the value is capped
 at `maxTime()` (or the end of the day) if the sum would overflow.
 
-**It remembers the duration.** Once the user overrides the end time, that *gap* is preserved on
-later start changes instead of snapping back to the default. Pick 12:00 pm → end fills to
-12:30 pm; change the end to 1:00 pm (a 1-hour gap); now move the start to 1:30 pm and the end
-follows to **2:30 pm**, keeping the hour. The saved gap is also seeded from an existing
-start/end pair on an edit form.
+**It keeps the gap.** Whenever the end time differs from the default — set by the user, or by
+your own logic (an `afterStateUpdated`, a `$set`) — that *gap* is preserved on later start
+changes instead of snapping back to the default. Pick 12:00 pm → end fills to 12:30 pm; change
+the end to 1:00 pm (a 1-hour gap); move the start to 1:30 pm and the end follows to **2:30 pm**,
+keeping the hour. The gap is read **live** (and runs client-side — no server roundtrip), and is
+seeded from an existing start/end pair on an edit form.
+
+This is what lets a per-category duration coexist with the picker: set `end_time` from your own
+field (e.g. an appointment type's minutes) via `afterStateUpdated`, and the picker preserves that
+gap when the user nudges the start — without a Livewire roundtrip each time.
 
 ### Show seconds
 

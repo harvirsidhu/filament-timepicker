@@ -36,9 +36,10 @@ All notable changes to `filament-timepicker` will be documented in this file.
 - Feature: `durationFrom()` (floors the dropdown after a sibling time and labels
   each option with the gap) plus `defaultDuration()` — auto-fills this field with
   the sibling's time + N minutes whenever the sibling changes, still overridable.
-  Remembers the gap: once the user overrides the end, later start changes preserve
-  that duration instead of snapping back to the default (seeded from an existing
-  pair on edit forms).
+  Keeps the gap: a start change shifts the end to preserve the current gap, read
+  live from the end value (so a duration set elsewhere — e.g. a type-driven `$set`
+  via `afterStateUpdated` — is respected), all client-side with no server
+  roundtrip; seeded from an existing pair on edit forms.
 - UX: `durationFrom` duration labels now use a hybrid format shown in brackets —
   friendly words up to an hour (`(30 mins)`, `(1 hour)`), compact past an hour
   (`(1h 30m)`, `(2h)`). Adds `duration.short_hour` / `short_minute` translations.

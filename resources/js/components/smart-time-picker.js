@@ -46,7 +46,7 @@ export default function smartTimePicker(config) {
         panelStyle: '',
         repositionOnViewport: null,
         pointerOrigin: null,
-        lastDuration: null, // remembered gap from the durationFrom field (minutes)
+        lastReference: null, // previous durationFrom value (minutes), for gap math
 
         init() {
             this.options = this.generateOptions()
@@ -61,14 +61,14 @@ export default function smartTimePicker(config) {
             })
 
             // Auto-fill from the durationFrom() field: when it is set or changed,
-            // set this field to (that time + the remembered gap, or defaultDuration
-            // until the user has set one). Seed the gap from any existing pair so
-            // an edit form keeps its saved duration; the watch fires only on
-            // change, so the value is left alone until then.
+            // shift this field to keep the current gap (read live, so a duration
+            // set elsewhere is respected), seeding with defaultDuration while this
+            // field is empty. Seed lastReference from any existing pair so an edit
+            // form keeps its saved gap. All client-side — no server roundtrip.
             if (this.durationFromStatePath && this.defaultDuration) {
-                this.rememberDuration()
+                this.lastReference = this.referenceMinutes()
                 this.$wire.$watch(this.durationFromStatePath, () =>
-                    this.applyDefaultDuration(),
+                    this.applyDurationFrom(),
                 )
             }
 
@@ -258,40 +258,32 @@ export default function smartTimePicker(config) {
             return parsed === null ? null : this.minutesOf(parsed)
         },
 
-        // Set this field to (durationFrom value + the remembered gap, or
-        // defaultDuration until the user has set one), capped at max (or end of
-        // day). No-op when the source is empty/invalid.
-        applyDefaultDuration() {
+        // When the durationFrom() field changes, shift this field to keep the
+        // current gap: read the live end (so a value set elsewhere — e.g. a
+        // type-driven $set — is respected) and move it by however far the source
+        // moved. Seed with defaultDuration while this field is empty. Capped at
+        // max (or end of day). No-op when the source is empty/invalid.
+        applyDurationFrom() {
             const reference = this.referenceMinutes()
 
             if (reference === null) {
+                this.lastReference = null
+
                 return
             }
 
-            const duration = this.lastDuration ?? this.defaultDuration
-            const cap = this.max ? this.minutesOf(this.max) : MINUTES_IN_DAY - 1
-            const end = Math.min(reference + duration, cap)
-
-            this.state = this.fromMinutes(end)
-            this.syncFromState()
-        },
-
-        // Remember the gap between this field and the durationFrom field, so a
-        // later change to the source shifts this field by the same amount instead
-        // of snapping back to defaultDuration. No-op without a valid pair.
-        rememberDuration() {
-            const reference = this.referenceMinutes()
             const end = this.parse(this.state)
+            const gap =
+                end !== null && this.lastReference !== null
+                    ? this.minutesOf(end) - this.lastReference
+                    : null
 
-            if (reference === null || end === null) {
-                return
-            }
+            const duration = gap !== null && gap > 0 ? gap : this.defaultDuration
+            const cap = this.max ? this.minutesOf(this.max) : MINUTES_IN_DAY - 1
 
-            const gap = this.minutesOf(end) - reference
-
-            if (gap > 0) {
-                this.lastDuration = gap
-            }
+            this.state = this.fromMinutes(Math.min(reference + duration, cap))
+            this.syncFromState()
+            this.lastReference = reference
         },
 
         visibleOptions() {
@@ -664,10 +656,6 @@ export default function smartTimePicker(config) {
 
             this.state = normalized
             this.display = this.toDisplay(normalized)
-
-            // Capture the new gap from the durationFrom field so a later change to
-            // the source preserves this duration (no-op when not a relative field).
-            this.rememberDuration()
         },
 
         positionPanel() {

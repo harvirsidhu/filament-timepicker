@@ -268,8 +268,23 @@ export default function smartTimePicker(config) {
             )
             this.highlight = this.initialHighlightIndex()
             this.isOpen = true
+
+            // Position once now, then again after the DOM updates and after the
+            // next frame. Focusing inside a Filament modal can still be settling
+            // its layout (open transition, scroll-into-view) when open() fires, so
+            // the first measurement of the input can be stale and pick the wrong
+            // flip direction. Re-measuring after paint locks it to the final spot
+            // — the same correction a manual scroll was triggering by hand.
             this.positionPanel()
-            this.$nextTick(() => this.scrollToHighlight())
+            this.$nextTick(() => {
+                this.positionPanel()
+                this.scrollToHighlight()
+                requestAnimationFrame(() => {
+                    if (this.isOpen) {
+                        this.positionPanel()
+                    }
+                })
+            })
         },
 
         // Which option to highlight when the panel opens with no typed filter:

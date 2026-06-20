@@ -24,6 +24,10 @@ All notable changes to `filament-timepicker` will be documented in this file.
 - Mobile: a drag that starts on an option now scrolls the list instead of
   selecting — options commit on `pointerup` only when the pointer barely moved
   (tap vs. scroll), and `touch-pan-y` guarantees vertical scrolling.
+- Fix: re-position the panel after the DOM settles (nextTick + a frame), not only
+  on the focus tick — inside a Filament modal the input's measured position could
+  be stale at open time, so the panel opened downward (and clipped) until a manual
+  scroll corrected it.
 - UI: match Filament's own Select dropdown — the panel is pinned to the input
   width, options use the neutral `bg-gray-50`/`dark:bg-white/5` highlight (not a
   primary tint) with rounded rows and `p-1` list padding.

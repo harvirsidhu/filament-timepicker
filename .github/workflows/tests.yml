@@ -1,0 +1,66 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Laravel 11 is deliberately absent: the entire 11.x line is blocked by
+        # Composer's security-advisory policy, so it cannot be installed at all.
+        php: ['8.2', '8.3', '8.4']
+        laravel: ['12.*', '13.*']
+        stability: [prefer-stable]
+        exclude:
+          # Laravel 13 requires PHP 8.3+.
+          - php: '8.2'
+            laravel: '13.*'
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+          # One lowest-bound run, to catch constraints that are wider than reality.
+          - php: '8.2'
+            laravel: '12.*'
+            testbench: '10.*'
+            stability: prefer-lowest
+
+    name: PHP ${{ matrix.php }} / L${{ matrix.laravel }} / ${{ matrix.stability }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, intl, zip
+          coverage: none
+
+      - name: Set framework constraints
+        run: >
+          composer require --no-update --no-interaction --dev
+          "laravel/framework:${{ matrix.laravel }}"
+          "orchestra/testbench:${{ matrix.testbench }}"
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          dependency-versions: ${{ matrix.stability }}
+
+      # --no-coverage is required: phpunit.xml.dist sets failOnWarning, and the
+      # <coverage> block makes PHPUnit warn (and so fail) with no driver installed.
+      - name: Run tests
+        run: vendor/bin/pest --no-coverage

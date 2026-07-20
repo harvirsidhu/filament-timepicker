@@ -1,0 +1,41 @@
+name: assets
+
+# The compiled Alpine component in resources/js/dist/ is committed so consumers
+# don't have to build it. This guards against it drifting from its source.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dist-is-current:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild assets
+        run: npm run build
+
+      - name: Fail if dist is stale
+        run: |
+          if ! git diff --quiet -- resources/js/dist; then
+            echo "::error::resources/js/dist is out of date. Run 'npm run build' and commit the result."
+            git diff --stat -- resources/js/dist
+            exit 1
+          fi

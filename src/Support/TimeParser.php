@@ -38,7 +38,7 @@ class TimeParser
 
         if (preg_match('/\s*([ap])\.?m?\.?$/', $normalized, $matches)) {
             $meridiem = $matches[1];
-            $normalized = trim(preg_replace('/\s*([ap])\.?m?\.?$/', '', $normalized));
+            $normalized = trim((string) preg_replace('/\s*([ap])\.?m?\.?$/', '', $normalized));
         }
 
         $hour = null;
@@ -105,7 +105,7 @@ class TimeParser
             return null;
         }
 
-        [$hour, $minute, $second] = array_map('intval', explode(':', $canonical));
+        [$hour, $minute, $second] = array_map(intval(...), explode(':', $canonical));
 
         $timestamp = mktime($hour, $minute, $second, 1, 1, 2000);
 

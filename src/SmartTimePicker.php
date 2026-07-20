@@ -63,18 +63,16 @@ class SmartTimePicker extends Field implements HasAffixActions
         // values that bypass the client.
         $component = $this;
 
-        $this->rule(function () use ($component): Closure {
-            return function (string $attribute, mixed $value, Closure $fail) use ($component): void {
-                if (! $component->isStrict()) {
-                    return;
-                }
+        $this->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail) use ($component): void {
+            if (! $component->isStrict()) {
+                return;
+            }
 
-                $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
+            $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
 
-                if ($parsed !== null && ! $component->isOnGrid($parsed)) {
-                    $fail(__('harvirsidhu-filament-timepicker::time-picker.off_grid', ['interval' => $component->getInterval()]));
-                }
-            };
+            if ($parsed !== null && ! $component->isOnGrid($parsed)) {
+                $fail(__('harvirsidhu-filament-timepicker::time-picker.off_grid', ['interval' => $component->getInterval()]));
+            }
         });
     }
 
@@ -215,7 +213,7 @@ class SmartTimePicker extends Field implements HasAffixActions
      */
     protected function isOnGrid(string $canonical): bool
     {
-        $parts = array_map('intval', explode(':', $canonical));
+        $parts = array_map(intval(...), explode(':', $canonical));
         $minutes = ($parts[0] * 60) + $parts[1];
         $second = $parts[2] ?? 0;
 
@@ -235,7 +233,7 @@ class SmartTimePicker extends Field implements HasAffixActions
 
     protected function toMinutes(string $canonical): int
     {
-        [$hour, $minute] = array_map('intval', explode(':', $canonical));
+        [$hour, $minute] = array_map(intval(...), explode(':', $canonical));
 
         return ($hour * 60) + $minute;
     }

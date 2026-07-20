@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Harvirsidhu\FilamentTimepicker;
 
 use Filament\Support\Assets\AlpineComponent;

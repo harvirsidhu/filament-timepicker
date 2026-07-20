@@ -16,18 +16,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Laravel 11 is deliberately absent: the entire 11.x line is blocked by
+        # Composer's security-advisory policy, so it cannot be installed at all.
         php: ['8.2', '8.3', '8.4']
-        laravel: ['11.*', '12.*']
+        laravel: ['12.*', '13.*']
         stability: [prefer-stable]
+        exclude:
+          # Laravel 13 requires PHP 8.3+.
+          - php: '8.2'
+            laravel: '13.*'
         include:
-          - laravel: '11.*'
-            testbench: '9.*'
           - laravel: '12.*'
             testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
           # One lowest-bound run, to catch constraints that are wider than reality.
           - php: '8.2'
-            laravel: '11.*'
-            testbench: '9.*'
+            laravel: '12.*'
+            testbench: '10.*'
             stability: prefer-lowest
 
     name: PHP ${{ matrix.php }} / L${{ matrix.laravel }} / ${{ matrix.stability }}

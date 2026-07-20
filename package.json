@@ -8,6 +8,6 @@
     },
     "devDependencies": {
         "esbuild": "^0.28.1",
-        "prettier": "^3.5.3"
+        "prettier": "^3.9.5"
     }
 }

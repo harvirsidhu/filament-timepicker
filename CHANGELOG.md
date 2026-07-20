@@ -2,6 +2,25 @@
 
 All notable changes to `filament-timepicker` will be documented in this file.
 
+## 1.0.6 - 2026-07-21
+
+No runtime changes — the field behaves identically to 1.0.5. This release covers
+project infrastructure only.
+
+- CI: test matrix across PHP 8.2–8.4 and Laravel 12/13, plus a `prefer-lowest`
+  run. Laravel 11 is not tested: the entire 11.x line is blocked by Composer's
+  security advisory policy and can no longer be installed.
+- CI: pint, phpstan and rector run on every push and pull request.
+- CI: the committed `resources/js/dist/` build is now verified against its source,
+  so it can't silently drift for consumers.
+- Security: added `SECURITY.md` with a private disclosure process, and enabled
+  Dependabot for composer, npm and GitHub Actions. All Actions are pinned to
+  commit SHAs.
+- Internal: applied pending Rector fixes (`declare(strict_types=1)`, first-class
+  callables, a `preg_replace` string cast) — all behaviour-preserving.
+- `minimum-stability` is now `stable` rather than `dev`. This has no effect on
+  consumers: Composer only honours that key from the root package.
+
 ## Unreleased
 
 - Initial development: `SmartTimePicker` form field with free-text parsing,

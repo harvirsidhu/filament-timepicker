@@ -110,17 +110,33 @@ it('renders the reactive-config bridge outside the ignored subtree', function ()
 });
 
 it('marks the input invalid when the field has an error', function () {
-    TimePickerTestComponent::$configure = fn (SmartTimePicker $field) => $field->maxTime('17:00');
-    TimePickerTestComponent::$initialState = ['start_time' => '18:00'];
-
+    // Seed the error bag directly: what's under test is the view reacting to an
+    // error on this state path, not how the error got there.
     $component = livewire(TimePickerTestComponent::class)
-        ->call('validate')
-        ->assertHasErrors('data.start_time')
+        ->call('fail')
         ->assertSee('aria-invalid="true"', escape: false);
 
     // The input sits inside wire:ignore, so the static attribute above only
     // covers this first paint; the bridge is what keeps it current later.
     expect($component->html())->toContain('isInvalid&quot;:true');
+});
+
+it('is clean when the field has no error', function () {
+    $html = livewire(TimePickerTestComponent::class)->html();
+
+    // Not a bare 'aria-invalid' check: the :aria-invalid Alpine binding that
+    // keeps the attribute current after a roundtrip is always in the markup.
+    expect($html)->not->toContain('aria-invalid="true"')
+        ->and($html)->toContain('isInvalid&quot;:false');
+});
+
+it('fails schema validation for a value outside the bounds', function () {
+    TimePickerTestComponent::$configure = fn (SmartTimePicker $field) => $field->maxTime('17:00');
+    TimePickerTestComponent::$initialState = ['start_time' => '18:00'];
+
+    livewire(TimePickerTestComponent::class)
+        ->call('save')
+        ->assertHasErrors('data.start_time');
 });
 
 it('does not render Tailwind utility classes on the panel', function () {

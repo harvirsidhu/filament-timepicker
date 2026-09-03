@@ -47,6 +47,29 @@ class TimePickerTestComponent extends Component implements HasSchemas
             ->statePath('data');
     }
 
+    /**
+     * Validate through Filament's own entry point. Livewire's generic
+     * validate() collects rules from getCachedSchemas(), which is only
+     * populated once something in the request has touched the schema — so
+     * whether it sees this field's rules depends on request ordering that
+     * varies between Filament/Livewire versions. Schema::getState() calls
+     * validate() on the schema itself, which is what a real save does.
+     */
+    public function save(): void
+    {
+        $this->form->getState();
+    }
+
+    /**
+     * Put an error on the field's state path. Livewire only exposes methods
+     * declared on the component itself to ->call(), so addError() has to be
+     * reached through one of these.
+     */
+    public function fail(): void
+    {
+        $this->addError('data.start_time', 'Nope.');
+    }
+
     public function render(): string
     {
         return <<<'BLADE'

@@ -1,7 +1,8 @@
 name: assets
 
-# The compiled Alpine component in resources/js/dist/ is committed so consumers
-# don't have to build it. This guards against it drifting from its source.
+# The Alpine component is compiled and committed so consumers don't have to
+# build it. This guards the dist file against drifting from its source, and runs
+# the JavaScript half of the parser-parity suite.
 
 on:
   push:
@@ -13,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  dist-is-current:
+  js:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +29,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # The Alpine component mirrors src/Support/TimeParser.php. Both suites run
+      # tests/Fixtures/parse-cases.json, so a rule changed on one side only
+      # fails here or in the PHP job.
+      - name: Run JavaScript tests
+        run: npm test
 
       - name: Rebuild assets
         run: npm run build

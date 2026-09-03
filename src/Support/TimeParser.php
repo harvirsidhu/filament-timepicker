@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Harvirsidhu\FilamentTimepicker\Support;
+
+use DateTimeImmutable;
+use DateTimeZone;
 
 /**
  * Forgiving wall-clock time parser. Turns whatever a human types into a
@@ -10,7 +15,9 @@ namespace Harvirsidhu\FilamentTimepicker\Support;
  * dehydration so no typed value is ever stored unnormalized, regardless of
  * what the client-side JS mirror did. The JS in
  * `resources/js/components/smart-time-picker.js` mirrors these rules for
- * instant feedback — keep the two in lockstep.
+ * instant feedback — keep the two in lockstep. `tests/Fixtures/parse-cases.json`
+ * is the shared table both test suites run, so a rule changed on one side and
+ * not the other fails CI.
  *
  * Examples:
  *   "3:30 PM" -> "15:30"   "3p" / "3pm" -> "15:00"   "9" -> "09:00"
@@ -96,6 +103,11 @@ class TimeParser
      * `$displayFormat` uses PHP date() tokens. The default `g:i a` gives the
      * non-padded, lowercase 12-hour look ("3:30 pm"); pass `g:i A` for
      * uppercase ("3:30 PM") or `h:i a` for a zero-padded hour ("03:30 pm").
+     *
+     * Formatting is pinned to UTC on a fixed date. The value is wall-clock, so
+     * the app's timezone must never enter the calculation — a zone whose clocks
+     * jump at the moment used as the base would otherwise shift the rendered
+     * hour.
      */
     public static function format(?string $value, string $displayFormat = 'g:i a'): ?string
     {
@@ -105,10 +117,26 @@ class TimeParser
             return null;
         }
 
-        [$hour, $minute, $second] = array_map(intval(...), explode(':', $canonical));
+        // "!" zeroes every field the format doesn't set, so only the time
+        // parsed here contributes — no "now" leaks in.
+        $time = DateTimeImmutable::createFromFormat(
+            '!H:i:s',
+            $canonical,
+            new DateTimeZone('UTC'),
+        );
 
-        $timestamp = mktime($hour, $minute, $second, 1, 1, 2000);
+        return $time === false ? null : $time->format($displayFormat);
+    }
 
-        return $timestamp === false ? null : date($displayFormat, $timestamp);
+    /**
+     * Seconds-since-midnight for a canonical `H:i`/`H:i:s` value. Used for
+     * range comparisons, where a bare "17:00" ceiling must still reject
+     * "17:00:30" when the field stores seconds.
+     */
+    public static function toSeconds(string $canonical): int
+    {
+        $parts = array_map(intval(...), explode(':', $canonical));
+
+        return ($parts[0] * 3600) + ($parts[1] * 60) + ($parts[2] ?? 0);
     }
 }

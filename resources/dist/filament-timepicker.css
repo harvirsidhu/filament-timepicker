@@ -1,0 +1,132 @@
+/*
+ * Suggestion-panel styling for SmartTimePicker.
+ *
+ * Hand-written plain CSS on purpose. The panel used to be styled with Tailwind
+ * utility classes in the Blade view, which meant every consumer running a
+ * custom Filament theme had to add an `@source` line for this package's views
+ * or get an unstyled dropdown. Shipping the compiled rules as a registered
+ * Filament CSS asset removes that step entirely.
+ *
+ * Colours read Filament's runtime `--gray-*` custom properties (emitted at
+ * :root by FilamentAsset), so the panel follows whatever gray the app's theme
+ * configured. The literal fallbacks are Tailwind's zinc — Filament's own
+ * default — so the field still looks right outside a panel, e.g. in a plain
+ * Livewire form.
+ *
+ * Values mirror what the utilities used to produce: rounded-lg / p-1 /
+ * shadow-lg + ring-1 ring-gray-950/5, text-sm rows at py-2.5 (≈44px touch
+ * targets) tightening to py-2 on sm+ pointers.
+ */
+
+/* The reactive-config bridge (see the Blade view). It sits inside Filament's
+   input wrapper, whose child rules could outrank the UA [hidden] style, so pin
+   it closed explicitly. */
+.fi-ti-config {
+    display: none !important;
+}
+
+.fi-ti-panel {
+    /* A fixed overlay teleported to <body>, so it escapes the overflow clipping
+       of repeater rows and modals; z-index clears Filament's modal layer.
+       positionPanel() supplies left/top/width/max-height each frame. */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    overflow-y: auto;
+    touch-action: pan-y;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--gray-950, oklch(0.141 0.005 285.823)) 5%, transparent),
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* The panel is x-show/x-cloak driven and teleported to <body>, so it must stay
+   hidden before Alpine boots even when no Filament theme CSS is present. */
+.fi-ti-panel[x-cloak] {
+    display: none !important;
+}
+
+.fi-ti-panel > * + * {
+    margin-top: 1px;
+}
+
+.fi-ti-option,
+.fi-ti-empty {
+    border-radius: 0.375rem;
+    padding-block: 0.625rem;
+    padding-inline: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.fi-ti-empty {
+    color: var(--gray-500, oklch(0.552 0.016 285.938));
+}
+
+.fi-ti-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--gray-700, oklch(0.37 0.013 285.805));
+    transition: background-color 75ms ease;
+}
+
+.fi-ti-option-active {
+    background-color: var(--gray-50, oklch(0.985 0 0));
+}
+
+.fi-ti-option-label {
+    font-variant-numeric: tabular-nums;
+}
+
+.fi-ti-option-duration {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--gray-400, oklch(0.705 0.015 286.067));
+}
+
+@media (min-width: 40rem) {
+    .fi-ti-option,
+    .fi-ti-empty {
+        padding-block: 0.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-ti-option {
+        transition: none;
+    }
+}
+
+.dark .fi-ti-panel {
+    background-color: var(--gray-900, oklch(0.21 0.006 285.885));
+    box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.1),
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.dark .fi-ti-empty {
+    color: var(--gray-400, oklch(0.705 0.015 286.067));
+}
+
+.dark .fi-ti-option {
+    color: var(--gray-200, oklch(0.92 0.004 286.32));
+}
+
+.dark .fi-ti-option-active {
+    background-color: rgb(255 255 255 / 0.05);
+}
+
+.dark .fi-ti-option-duration {
+    color: var(--gray-500, oklch(0.552 0.016 285.938));
+}

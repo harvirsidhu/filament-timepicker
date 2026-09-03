@@ -1,4 +1,6 @@
 @php
+    use Harvirsidhu\FilamentTimepicker\Support\TimeParser;
+
     $fieldWrapperView = $getFieldWrapperView();
     $extraAttributeBag = $getExtraAttributeBag();
     $isDisabled = $isDisabled();
@@ -14,7 +16,18 @@
     $suffixLabel = $getSuffixLabel();
     $statePath = $getStatePath();
     $placeholder = $getPlaceholder();
-    $durationFromStatePath = $getDurationFromStatePath();
+    $id = $getId();
+    $isInvalid = $errors->has($statePath);
+
+    // Everything the Alpine component needs except the entangled state. The
+    // error flag is a view concern ($errors), so it joins the field's own
+    // config here rather than in getAlpineConfig().
+    $alpineConfig = [...$getAlpineConfig(), 'isInvalid' => $isInvalid];
+
+    // Render the committed value into the input's `value` up front. The Alpine
+    // component is lazily loaded (x-load), so without this an edit form shows
+    // empty time boxes until the chunk arrives and init() runs syncFromState().
+    $initialDisplay = TimeParser::format($getState(), $alpineConfig['displayFormat']);
 @endphp
 
 <x-dynamic-component
@@ -41,6 +54,19 @@
                 ->class('fi-ti-time-picker')
         "
     >
+        {{-- Reactive-config bridge. The Alpine root below carries `wire:ignore`
+             (see the note there), so Livewire can never morph its x-data — a
+             reactive minTime()/maxTime()/interval() closure would otherwise stay
+             frozen at whatever it evaluated to on first render. This sibling
+             sits OUTSIDE the ignored subtree, so Livewire does morph it; the
+             component watches `data-config` and rebuilds its option grid. --}}
+        <div
+            id="{{ $id }}-config"
+            class="fi-ti-config"
+            data-config="{{ json_encode($alpineConfig) }}"
+            hidden
+        ></div>
+
         <div
             x-load
             x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('smart-time-picker', 'harvirsidhu/filament-timepicker') }}"
@@ -48,32 +74,19 @@
                  re-processes the `x-teleport` panel and re-inits the teleported
                  <ul> outside the component scope (every binding then throws
                  "… is not defined"). State stays in sync via $entangle + the
-                 init() $watch, exactly like Filament's own Alpine inputs. --}}
+                 init() $watch; config changes arrive via the bridge above. --}}
             wire:ignore
             x-data="smartTimePicker({
-                state: $wire.$entangle('{{ $statePath }}'),
-                interval: @js($getInterval()),
-                min: @js($getMinTime()),
-                max: @js($getMaxTime()),
-                seconds: @js($getSeconds()),
-                strict: @js($isStrict()),
-                displayFormat: @js($getDisplayFormat()),
-                isDisabled: @js($isDisabled),
-                durationFromStatePath: @js($durationFromStatePath),
-                defaultDuration: @js($getDefaultDuration()),
-                fieldId: @js($getId()),
-                durationLabels: @js([
-                    'hour' => __('harvirsidhu-filament-timepicker::time-picker.duration.hour'),
-                    'hours' => __('harvirsidhu-filament-timepicker::time-picker.duration.hours'),
-                    'minute' => __('harvirsidhu-filament-timepicker::time-picker.duration.minute'),
-                    'minutes' => __('harvirsidhu-filament-timepicker::time-picker.duration.minutes'),
-                    'shortHour' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_hour'),
-                    'shortMinute' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_minute'),
-                ]),
+                {{-- applyStateBindingModifiers turns this into $entangle(path, true)
+                     when the field is ->live(), which is what makes live(),
+                     afterStateUpdated() and reactive siblings fire on commit. --}}
+                state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')") }},
+                ...@js($alpineConfig),
             })"
+            {{-- No scroll/resize listeners: while the panel is open the
+                 component re-measures every frame (startAutoPosition), which
+                 also catches movement no event reports. --}}
             x-on:keydown.escape.stop="isOpen && (close(), $event.preventDefault())"
-            x-on:scroll.window.capture="isOpen && positionPanel()"
-            x-on:resize.window="isOpen && positionPanel()"
             {{ $getExtraAlpineAttributeBag()->class(['fi-input-wrp-content', 'w-full']) }}
         >
             <input
@@ -85,24 +98,43 @@
                 x-on:blur="onBlur()"
                 x-on:keydown.arrow-down.prevent="move(1)"
                 x-on:keydown.arrow-up.prevent="move(-1)"
-                x-on:keydown.enter.prevent.stop="selectHighlighted()"
-                x-on:keydown.tab="isOpen && selectHighlighted()"
+                x-on:keydown.home="isOpen && (moveTo(0), $event.preventDefault())"
+                x-on:keydown.end="isOpen && (moveTo(filtered.length - 1), $event.preventDefault())"
+                x-on:keydown.page-down="isOpen && (movePage(1), $event.preventDefault())"
+                x-on:keydown.page-up="isOpen && (movePage(-1), $event.preventDefault())"
+                {{-- Open: pick the highlight and swallow the key. Closed (after
+                     Escape): commit the typed text but let the form submit. --}}
+                x-on:keydown.enter="onEnter($event)"
+                {{-- Tab commits the highlighted option, but only once the user
+                     has actually typed or arrowed. Merely focusing highlights
+                     the slot nearest to now — tabbing straight past an untouched
+                     field must not silently fill it. --}}
+                x-on:keydown.tab="isOpen && hasInteracted && selectHighlighted()"
                 role="combobox"
                 aria-haspopup="listbox"
                 aria-autocomplete="list"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 :aria-controls="listboxId()"
                 :aria-activedescendant="activeDescendantId()"
+                {{-- These two live inside wire:ignore, so their server-rendered
+                     attributes below only cover the first paint. Alpine keeps
+                     them current from the bridge config after every roundtrip
+                     — otherwise a validation error would never set aria-invalid
+                     (or clear it), and a reactive disabled() would stick. --}}
+                :aria-invalid="isInvalid ? 'true' : null"
+                :disabled="isDisabled"
                 {{
                     $getExtraInputAttributeBag()
                         ->merge([
+                            'aria-invalid' => $isInvalid ? 'true' : null,
                             'autocomplete' => 'off',
                             'disabled' => $isDisabled,
-                            'id' => $getId(),
+                            'id' => $id,
                             'inputmode' => 'text',
                             'placeholder' => filled($placeholder) ? e($placeholder) : null,
                             'required' => $isRequired() && (! $isConcealed()),
                             'type' => 'text',
+                            'value' => filled($initialDisplay) ? e($initialDisplay) : null,
                         ], escape: false)
                         ->class([
                             'fi-input',
@@ -118,18 +150,21 @@
                     x-show="isOpen"
                     x-cloak
                     x-transition.opacity.duration.100ms
-                    :style="panelStyle"
+                    {{-- Position is written straight onto the element by
+                         positionPanel(); a `:style` string binding would
+                         setAttribute("style", …) and wipe the display/opacity
+                         x-show and x-transition put on this same element. --}}
                     :id="listboxId()"
                     role="listbox"
                     aria-label="{{ __('harvirsidhu-filament-timepicker::time-picker.listbox_label') }}"
-                    {{-- Mirrors Filament's own dropdown panel + list chrome
-                         (rounded-lg bg-white/gray-900 ring + shadow, p-1 grid).
-                         fi-dropdown-panel is intentionally NOT used: its
-                         max-w-[14rem]! would override the input-matched width. --}}
-                    class="fi-ti-panel max-h-60 space-y-px overflow-y-auto touch-pan-y rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+                    {{-- Styled by the package's own registered CSS asset
+                         (resources/dist/filament-timepicker.css), not Tailwind
+                         utilities — so a consuming app needs no `@source` line
+                         to make the dropdown look right. --}}
+                    class="fi-ti-panel"
                 >
                     <template x-if="! filtered.length">
-                        <li class="rounded-md px-2 py-2.5 text-sm text-gray-500 dark:text-gray-400 sm:py-2">
+                        <li class="fi-ti-empty">
                             {{ __('harvirsidhu-filament-timepicker::time-picker.no_matching_time') }}
                         </li>
                     </template>
@@ -147,17 +182,16 @@
                             x-on:pointerup="onOptionPointerUp($event, option)"
                             x-on:mousemove="highlight = index"
                             {{-- Neutral gray highlight matching Filament's Select
-                                 option (bg-gray-50 / dark:white-5), not a primary
-                                 tint; text colour stays constant. --}}
-                            :class="{ 'bg-gray-50 dark:bg-white/5': index === highlight }"
-                            {{-- Roomier rows on touch (≈44px); compact on sm+ pointers. --}}
-                            class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2.5 text-sm text-gray-700 transition-colors duration-75 dark:text-gray-200 sm:py-2"
+                                 option, not a primary tint; text colour stays
+                                 constant. --}}
+                            :class="index === highlight && 'fi-ti-option-active'"
+                            class="fi-ti-option"
                         >
-                            <span x-text="option.label" class="tabular-nums"></span>
+                            <span x-text="option.label" class="fi-ti-option-label"></span>
                             <span
                                 x-show="option.duration"
                                 x-text="'(' + option.duration + ')'"
-                                class="text-xs text-gray-400 dark:text-gray-500 tabular-nums"
+                                class="fi-ti-option-duration"
                             ></span>
                         </li>
                     </template>

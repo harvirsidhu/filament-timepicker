@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Harvirsidhu\FilamentTimepicker;
 
 use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -41,6 +42,16 @@ class FilamentTimepickerServiceProvider extends PackageServiceProvider
             AlpineComponent::make(
                 'smart-time-picker',
                 __DIR__ . '/../resources/js/dist/components/smart-time-picker.js',
+            ),
+
+            // The suggestion panel's styling, as plain CSS. Registering it here
+            // is what frees consumers from adding an `@source` line for this
+            // package's views to their Tailwind theme — without it, an app on a
+            // custom theme rendered the dropdown unstyled. It reads Filament's
+            // runtime --gray-* variables, so it still follows the app's theme.
+            Css::make(
+                'filament-timepicker',
+                __DIR__ . '/../resources/dist/filament-timepicker.css',
             ),
         ], package: 'harvirsidhu/filament-timepicker');
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Harvirsidhu\FilamentTimepicker;
 
 use Closure;
@@ -56,22 +58,24 @@ class SmartTimePicker extends Field implements HasAffixActions
         // pasted, JS-missed) is coerced to canonical `H:i`/`H:i:s` or null.
         $this->dehydrateStateUsing(fn (?string $state): ?string => TimeParser::parse($state, $this->getSeconds()));
 
-        // In strict mode, surface a real validation error for a validly-parsed
-        // time that isn't on the interval grid (e.g. a pasted/programmatic
-        // "12:01" with a 15-min interval) instead of silently dropping it. The
-        // JS already snaps typed off-grid input back, so this mainly guards
-        // values that bypass the client.
+        // Surface a real validation error for a parseable time the field
+        // shouldn't accept — outside minTime()/maxTime(), or (in strict mode)
+        // off the interval grid — instead of silently storing or dropping it.
+        // The JS snaps typed values back before they get this far, so this
+        // mainly guards what bypasses the client: pastes, imports, $set calls.
         $component = $this;
 
         $this->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail) use ($component): void {
-            if (! $component->isStrict()) {
+            $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
+
+            if ($parsed === null) {
                 return;
             }
 
-            $parsed = TimeParser::parse(is_string($value) ? $value : null, $component->getSeconds());
+            $message = $component->getOutOfBoundsMessage($parsed);
 
-            if ($parsed !== null && ! $component->isOnGrid($parsed)) {
-                $fail(__('harvirsidhu-filament-timepicker::time-picker.off_grid', ['interval' => $component->getInterval()]));
+            if ($message !== null) {
+                $fail($message);
             }
         });
     }
@@ -148,8 +152,8 @@ class SmartTimePicker extends Field implements HasAffixActions
     /**
      * Restrict committed values to the interval grid. When true, a free-typed
      * time that parses validly but doesn't land on a generated slot (e.g.
-     * "12:01" with a 15-minute interval, or anything outside min/max) is
-     * rejected rather than stored.
+     * "12:01" with a 15-minute interval) is rejected rather than stored.
+     * minTime()/maxTime() are enforced either way.
      */
     public function strict(bool | Closure $condition = true): static
     {
@@ -193,7 +197,7 @@ class SmartTimePicker extends Field implements HasAffixActions
 
     public function getDisplayFormat(): string
     {
-        return $this->evaluate($this->displayFormat);
+        return (string) $this->evaluate($this->displayFormat);
     }
 
     public function getSeconds(): bool
@@ -204,6 +208,38 @@ class SmartTimePicker extends Field implements HasAffixActions
     public function isStrict(): bool
     {
         return (bool) $this->evaluate($this->isStrict);
+    }
+
+    /**
+     * The validation message for a canonical value this field shouldn't accept,
+     * or null when it's fine. Bounds are checked before the grid so an
+     * out-of-window time reports that, rather than a confusing "wrong interval".
+     */
+    protected function getOutOfBoundsMessage(string $canonical): ?string
+    {
+        $seconds = TimeParser::toSeconds($canonical);
+        $min = $this->getMinTime();
+        $max = $this->getMaxTime();
+
+        if ($min !== null && $seconds < TimeParser::toSeconds($min)) {
+            return __('harvirsidhu-filament-timepicker::time-picker.min_time', [
+                'time' => TimeParser::format($min, $this->getDisplayFormat()),
+            ]);
+        }
+
+        if ($max !== null && $seconds > TimeParser::toSeconds($max)) {
+            return __('harvirsidhu-filament-timepicker::time-picker.max_time', [
+                'time' => TimeParser::format($max, $this->getDisplayFormat()),
+            ]);
+        }
+
+        if ($this->isStrict() && ! $this->isOnGrid($canonical)) {
+            return __('harvirsidhu-filament-timepicker::time-picker.off_grid', [
+                'interval' => $this->getInterval(),
+            ]);
+        }
+
+        return null;
     }
 
     /**
@@ -262,6 +298,38 @@ class SmartTimePicker extends Field implements HasAffixActions
         $minutes = $this->evaluate($this->defaultDuration);
 
         return $minutes === null ? null : max(1, (int) $minutes);
+    }
+
+    /**
+     * The JSON-serialisable half of the Alpine component's config — everything
+     * bar the entangled state. Rendered twice by the view: inline in `x-data`
+     * for the initial boot, and into the sibling `data-config` bridge that
+     * carries later changes past `wire:ignore` (see the view for why).
+     *
+     * @return array<string, mixed>
+     */
+    public function getAlpineConfig(): array
+    {
+        return [
+            'interval' => $this->getInterval(),
+            'min' => $this->getMinTime(),
+            'max' => $this->getMaxTime(),
+            'seconds' => $this->getSeconds(),
+            'strict' => $this->isStrict(),
+            'displayFormat' => $this->getDisplayFormat(),
+            'isDisabled' => $this->isDisabled(),
+            'durationFromStatePath' => $this->getDurationFromStatePath(),
+            'defaultDuration' => $this->getDefaultDuration(),
+            'fieldId' => $this->getId(),
+            'durationLabels' => [
+                'hour' => __('harvirsidhu-filament-timepicker::time-picker.duration.hour'),
+                'hours' => __('harvirsidhu-filament-timepicker::time-picker.duration.hours'),
+                'minute' => __('harvirsidhu-filament-timepicker::time-picker.duration.minute'),
+                'minutes' => __('harvirsidhu-filament-timepicker::time-picker.duration.minutes'),
+                'shortHour' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_hour'),
+                'shortMinute' => __('harvirsidhu-filament-timepicker::time-picker.duration.short_minute'),
+            ],
+        ];
     }
 
     protected function normalizeBoundary(string | Carbon | Closure | null $value): ?string

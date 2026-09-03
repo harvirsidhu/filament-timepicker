@@ -51,5 +51,9 @@ class TestCase extends Orchestra
     {
         $app['config']->set('database.default', 'testing');
         $app['config']->set('app.timezone', 'Asia/Kuala_Lumpur');
+
+        // Livewire renders a signed payload, so the feature tests that actually
+        // mount the field need a key.
+        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
     }
 }

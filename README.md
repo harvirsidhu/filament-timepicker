@@ -78,15 +78,13 @@ SmartTimePicker::make('start_time')
 That's it. The field stores a plain `H:i` string like `"15:30"`, so it drops straight into a
 `time` column with no casting or accessors.
 
-> **Using a [custom Filament theme](https://filamentphp.com/docs/5.x/themes)?** One extra step:
-> add the package's views to your theme so Tailwind compiles the dropdown styles. In your theme's
-> `resources/css/filament/<panel>/theme.css`:
+> **Using a [custom Filament theme](https://filamentphp.com/docs/5.x/themes)?** Nothing extra to
+> do. The dropdown ships its own stylesheet as a registered Filament asset (published by the
+> `filament:assets` command above), so it needs no `@source` line and no theme rebuild. It reads
+> Filament's runtime colour variables, so it follows whatever gray your theme configured.
 >
-> ```css
-> @source '../../../../vendor/harvirsidhu/filament-timepicker/resources/views/**/*.blade.php';
-> ```
->
-> Then rebuild: `npm run build`. (Skip this if you use Filament's default styling.)
+> *(Upgrading from 1.0.x? You can delete the `@source '…/filament-timepicker/…'` line you were
+> asked to add — it's now a no-op.)*
 
 ---
 
@@ -145,10 +143,16 @@ SmartTimePicker::make('start_time')
     ->interval(30);
 ```
 
+Both bounds are **enforced**, not just used to build the dropdown: a time outside the window
+fails validation, so a pasted or imported value can't slip through.
+
 `minTime` / `maxTime` accept a string, a `Carbon` instance, or a closure — so a bound can depend
-on another field:
+on another field. Make that field `->live()` so the picker's suggestions follow it:
 
 ```php
+TextInput::make('opens_at')
+    ->live(),
+
 SmartTimePicker::make('start_time')
     ->minTime(fn (Get $get) => $get('opens_at'));
 ```
@@ -243,13 +247,13 @@ any off-grid value that bypasses the browser (a paste, a programmatic default, a
 | Method | Default | Description |
 |--------|---------|-------------|
 | `interval(int\|Closure)` | `15` | Minutes between dropdown suggestions. |
-| `minTime(string\|Carbon\|Closure\|null)` | `null` | Earliest selectable time (inclusive). |
-| `maxTime(string\|Carbon\|Closure\|null)` | `null` | Latest selectable time (inclusive). |
+| `minTime(string\|Carbon\|Closure\|null)` | `null` | Earliest selectable time (inclusive). Enforced — an earlier time fails validation. |
+| `maxTime(string\|Carbon\|Closure\|null)` | `null` | Latest selectable time (inclusive). Enforced — a later time fails validation. |
 | `durationFrom(string\|Closure\|null)` | `null` | Sibling field name; floors options after it and adds duration labels. |
 | `defaultDuration(int\|Closure\|null)` | `null` | Minutes; auto-fills this field when the `durationFrom` field changes. |
 | `displayFormat(string\|Closure)` | `'g:i a'` | How the value is shown, in PHP `date()` tokens. |
 | `seconds(bool\|Closure)` | `false` | Store/display seconds (`H:i:s`). |
-| `strict(bool\|Closure)` | `false` | Confine values to the grid; off-grid times fail validation. |
+| `strict(bool\|Closure)` | `false` | Also confine values to the interval grid; off-grid times fail validation. |
 | `native(bool\|Closure)` | — | **No-op.** Accepted for drop-in parity with Filament's `TimePicker`. |
 | `timezone(string\|Closure\|null)` | — | **No-op.** Times are wall-clock and never shift. |
 
@@ -299,18 +303,23 @@ announced by screen readers.
 | Key            | Action                                   |
 |----------------|------------------------------------------|
 | Type           | Filter the suggestions live              |
-| ↑ / ↓          | Move through the suggestions             |
+| ↑ / ↓          | Move through the suggestions (wraps)     |
+| Home / End     | Jump to the first / last suggestion      |
+| PgUp / PgDn    | Move a screenful at a time               |
 | Enter          | Select the highlighted suggestion        |
 | Tab            | Select the highlighted suggestion & move on |
 | Esc            | Close the dropdown                        |
+
+Tab only commits once you've actually typed or arrowed — tabbing straight through a field you
+never touched leaves it as it was.
 
 ---
 
 ## Troubleshooting
 
 **The dropdown shows up unstyled (no colours, wrong layout).**
-You're using a custom Filament theme and haven't told Tailwind about the package's views. Add the
-`@source` line from [Quick start](#quick-start), then rebuild your theme with `npm run build`.
+Run `php artisan filament:assets` and reload — the panel's stylesheet is a published Filament
+asset. (Before 1.1 this needed an `@source` line in your theme; it doesn't any more.)
 
 **Nothing happens when I focus the field / the JS doesn't load.**
 Run `php artisan filament:assets` and reload. This publishes (and re-publishes) the lazy-loaded
@@ -318,8 +327,12 @@ component into `/public`. Re-run it any time the package updates.
 
 **A typed time gets blanked out on save.**
 The value didn't parse. Check the [parsing table](#how-input-parsing-works) — anything
-unrecognised normalizes to `null`. If you're in `strict()` mode, an off-grid time is rejected by
-design (with a validation message when it bypasses the browser).
+unrecognised normalizes to `null`.
+
+**I get "Choose a time at or after …" / "at or before …".**
+The time is outside `minTime()` / `maxTime()`. Those bounds are enforced, not just suggested, so
+a value that bypasses the browser (paste, import, `$set`) fails validation rather than being
+stored out of range. `strict()` adds the same treatment for off-grid times.
 
 **`durationFrom()` labels or `defaultDuration()` auto-fill aren't updating.**
 Make the source field `->live()` so its value propagates as it changes.
@@ -355,6 +368,12 @@ Curious or extending it? The design choices that matter:
   nothing on pages that don't use the field.
 - **It implements the ARIA combobox/listbox pattern** (`role`, `aria-expanded`,
   `aria-activedescendant`, `aria-selected`), so keyboard navigation is announced to screen readers.
+- **The committed value is rendered server-side into the input,** so an edit form shows the right
+  time immediately rather than flashing empty while the lazy-loaded component arrives.
+- **The suggestion panel is teleported to `<body>`** to escape the overflow clipping of repeater
+  rows and modals, which means Livewire must not morph the component's subtree (`wire:ignore`).
+  Reactive config — a `minTime()` closure that depends on another field — therefore reaches the
+  browser through a small sibling `data-config` element that Livewire *does* morph.
 
 ---
 
@@ -366,7 +385,8 @@ npm install
 
 npm run dev      # watch + rebuild the Alpine component
 npm run build    # production build into resources/js/dist
-composer test    # Pest test suite
+composer test    # Pest test suite (PHP)
+npm test         # node --test suite (the Alpine component)
 ```
 
 The compiled `resources/js/dist/` file **is committed** — consumers don't build it. After
@@ -374,8 +394,9 @@ changing the JS, rebuild, then in any consuming app re-run `php artisan filament
 re-publish.
 
 If you change a parsing rule, change it in **both** `src/Support/TimeParser.php` (PHP,
-authoritative) and `resources/js/components/smart-time-picker.js` (JS), and update both test
-suites — they're meant to stay in lockstep.
+authoritative) and `resources/js/components/smart-time-picker.js` (JS), and add a row to
+`tests/Fixtures/parse-cases.json`. Both test suites run that one table, so a rule changed on one
+side only turns CI red instead of drifting quietly.
 
 ---
 

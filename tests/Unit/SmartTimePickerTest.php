@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Harvirsidhu\FilamentTimepicker\SmartTimePicker;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
@@ -99,6 +101,64 @@ it('uses a translated, interval-aware message for off-grid values', function () 
 
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->first('start'))->toBe('Choose a time at 30-minute intervals.');
+});
+
+it('fails validation for a time outside minTime/maxTime, strict or not', function () {
+    $field = SmartTimePicker::make('start')->interval(15)->minTime('09:00')->maxTime('17:00');
+
+    $errorFor = function (string $value) use ($field): ?string {
+        $validator = Validator::make(['start' => $value], ['start' => $field->getValidationRules()]);
+
+        return $validator->fails() ? $validator->errors()->first('start') : null;
+    };
+
+    // Bounds hold in loose mode — a bound is a bound, not a suggestion.
+    expect($errorFor('08:45'))->toBe('Choose a time at or after 9:00 am.')
+        ->and($errorFor('17:15'))->toBe('Choose a time at or before 5:00 pm.')
+        ->and($errorFor('09:00'))->toBeNull()
+        ->and($errorFor('17:00'))->toBeNull()
+        ->and($errorFor('12:30'))->toBeNull();
+});
+
+it('reports the bound, not the interval, for an out-of-window time in strict mode', function () {
+    // "08:47" is both out of range and off-grid; the range message is the
+    // useful one, so it wins.
+    $field = SmartTimePicker::make('start')->interval(15)->minTime('09:00')->strict();
+
+    $validator = Validator::make(['start' => '08:47'], ['start' => $field->getValidationRules()]);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->first('start'))->toBe('Choose a time at or after 9:00 am.');
+});
+
+it('states bounds in the field display format', function () {
+    $field = SmartTimePicker::make('start')->minTime('09:00')->displayFormat('H:i');
+
+    $validator = Validator::make(['start' => '08:00'], ['start' => $field->getValidationRules()]);
+
+    expect($validator->errors()->first('start'))->toBe('Choose a time at or after 09:00.');
+});
+
+it('leaves an unparseable value to the parser, not the bounds rule', function () {
+    // dehydrateStateUsing nulls it; the rule must not add a confusing second
+    // error on top.
+    $field = SmartTimePicker::make('start')->minTime('09:00')->strict();
+
+    $validator = Validator::make(['start' => 'nope'], ['start' => $field->getValidationRules()]);
+
+    expect($validator->fails())->toBeFalse();
+});
+
+it('compares bounds by the second when seconds are enabled', function () {
+    $field = SmartTimePicker::make('start')->maxTime('17:00')->seconds();
+
+    $validate = fn (string $value): bool => Validator::make(
+        ['start' => $value],
+        ['start' => $field->getValidationRules()],
+    )->fails();
+
+    expect($validate('17:00:00'))->toBeFalse()
+        ->and($validate('17:00:30'))->toBeTrue();
 });
 
 it('resolves the package translation namespace', function () {

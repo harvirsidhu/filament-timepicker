@@ -1,0 +1,68 @@
+{
+    "_comment": "The single source of truth for the parsing contract. Both tests/Unit/TimeParserTest.php (PHP) and tests/js/parser.test.js (the Alpine mirror) iterate this file, so a rule changed on one side and not the other fails CI. Add a row here whenever you touch parsing. `expected` is the canonical H:i result, or null when the input must be rejected.",
+    "parse": [
+        { "label": "12-hour with meridiem", "input": "3:30 PM", "expected": "15:30" },
+        { "label": "lowercase meridiem", "input": "3:30 pm", "expected": "15:30" },
+        { "label": "dotted meridiem", "input": "3:30 p.m.", "expected": "15:30" },
+        { "label": "morning", "input": "11:45 am", "expected": "11:45" },
+        { "label": "noon", "input": "12:00 pm", "expected": "12:00" },
+        { "label": "midnight", "input": "12:00 am", "expected": "00:00" },
+
+        { "label": "hour + single-letter meridiem", "input": "3p", "expected": "15:00" },
+        { "label": "hour + meridiem", "input": "3pm", "expected": "15:00" },
+        { "label": "hour + spaced meridiem", "input": "3 PM", "expected": "15:00" },
+        { "label": "morning shorthand", "input": "9a", "expected": "09:00" },
+
+        { "label": "bare hour", "input": "9", "expected": "09:00" },
+        { "label": "bare zero", "input": "0", "expected": "00:00" },
+        { "label": "bare twelve", "input": "12", "expected": "12:00" },
+
+        { "label": "three digits", "input": "330", "expected": "03:30" },
+        { "label": "four digits", "input": "1530", "expected": "15:30" },
+        { "label": "four digits, leading zero", "input": "0930", "expected": "09:30" },
+
+        { "label": "dot separator", "input": "9.30", "expected": "09:30" },
+        { "label": "dot separator with meridiem", "input": "9.30 pm", "expected": "21:30" },
+        { "label": "dot separator, 24-hour", "input": "15.45", "expected": "15:45" },
+        { "label": "h separator", "input": "9h30", "expected": "09:30" },
+        { "label": "h separator, uppercase", "input": "9H30", "expected": "09:30" },
+        { "label": "dotted midnight", "input": "12.00 am", "expected": "00:00" },
+        { "label": "dot with a single minute digit is invalid", "input": "9.5", "expected": null },
+
+        { "label": "already canonical", "input": "15:00", "expected": "15:00" },
+        { "label": "canonical with leading zero", "input": "09:05", "expected": "09:05" },
+        { "label": "last minute of the day", "input": "23:59", "expected": "23:59" },
+        { "label": "an unambiguous 24-hour hour ignores a stray meridiem", "input": "15:00 pm", "expected": "15:00" },
+
+        { "label": "surrounding whitespace", "input": "  3:30 pm  ", "expected": "15:30" },
+
+        { "label": "empty", "input": "", "expected": null },
+        { "label": "null", "input": null, "expected": null },
+        { "label": "garbage", "input": "nope", "expected": null },
+        { "label": "bare meridiem", "input": "pm", "expected": null },
+        { "label": "five digits", "input": "12345", "expected": null },
+        { "label": "out of range hour", "input": "25:00", "expected": null },
+        { "label": "out of range minute", "input": "12:60", "expected": null },
+        { "label": "bad 4-digit minute", "input": "1260", "expected": null }
+    ],
+    "parseWithSeconds": [
+        { "label": "seconds are kept", "input": "3:30:45 PM", "expected": "15:30:45" },
+        { "label": "seconds are zero-filled", "input": "330", "expected": "03:30:00" },
+        { "label": "dot separator for seconds", "input": "9.30.15", "expected": "09:30:15" },
+        { "label": "out of range second", "input": "9:30:60", "expected": null }
+    ],
+    "format": [
+        { "label": "default format, afternoon", "input": "15:30", "format": "g:i a", "expected": "3:30 pm" },
+        { "label": "default format, morning", "input": "09:00", "format": "g:i a", "expected": "9:00 am" },
+        { "label": "default format, midnight", "input": "00:00", "format": "g:i a", "expected": "12:00 am" },
+        { "label": "default format, noon", "input": "12:00", "format": "g:i a", "expected": "12:00 pm" },
+        { "label": "uppercase meridiem", "input": "15:30", "format": "g:i A", "expected": "3:30 PM" },
+        { "label": "zero-padded 12-hour", "input": "09:05", "format": "h:i a", "expected": "09:05 am" },
+        { "label": "24-hour", "input": "09:05", "format": "H:i", "expected": "09:05" },
+        { "label": "24-hour, non-padded", "input": "09:05", "format": "G:i", "expected": "9:05" },
+        { "label": "with seconds", "input": "15:30:45", "format": "H:i:s", "expected": "15:30:45" },
+        { "label": "escaped literals", "input": "15:30", "format": "\\a\\t g:i a", "expected": "at 3:30 pm" },
+        { "label": "blank", "input": "", "format": "g:i a", "expected": null },
+        { "label": "null", "input": null, "format": "g:i a", "expected": null }
+    ]
+}

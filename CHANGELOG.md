@@ -2,6 +2,86 @@
 
 All notable changes to `filament-timepicker` will be documented in this file.
 
+## 1.1.0 - 2026-09-04
+
+**Upgrading:** run `php artisan filament:assets` after updating — the dropdown's
+stylesheet is now a published asset. If your theme has an `@source` line for this
+package's views, it's now a no-op and can be removed.
+
+### Fixed
+
+- **`->live()` and `afterStateUpdated()` now fire when a time is committed.** The
+  view bound state with a bare `$wire.$entangle(...)`, which defers; it now goes
+  through Filament's `applyStateBindingModifiers()` like every first-party field,
+  so `$entangle(path, true)` is emitted for a `->live()` field. Reactive siblings
+  that depend on a `SmartTimePicker` previously did not update until some other
+  interaction triggered a request.
+- **Tabbing past an untouched field no longer fills it in.** Focusing the field
+  opens the panel and highlights the slot nearest to the current time; Tab then
+  committed that highlight, so keyboard-tabbing through a form silently wrote a
+  value into empty, optional time fields. Tab now commits only after the user has
+  typed or arrowed.
+- **Reactive `minTime()` / `maxTime()` / `interval()` closures reach the browser.**
+  The component's root carries `wire:ignore` (required — see AGENTS.md), which
+  also froze its `x-data` config at first render, so a bound depending on another
+  field never updated the dropdown. Config now arrives through a sibling
+  `data-config` element that Livewire does morph.
+- **Typing into a closed panel no longer discards the filter.** `onInput()` opened
+  the panel *after* filtering, and opening rebuilds the list from scratch —
+  reachable by pressing Escape and then typing.
+- **`Enter` in a closed picker submits the form again** instead of being swallowed
+  (it still commits any text typed before the panel was closed).
+- **The dropdown no longer opens in the wrong place on the first click.** The
+  panel was positioned once on open, and two things then moved it: the highlight
+  was revealed with `scrollIntoView`, which walks up *every* scrollable ancestor
+  and so scrolled the page when the panel was clipped at the bottom of the
+  viewport; and the position was applied through a `:style` string binding, which
+  Alpine writes with `setAttribute("style", …)` — replacing the whole attribute,
+  including the `display`/`opacity` that `x-show` and `x-transition` put on the
+  same element. Scrolling the page happened to fire a reposition, which is why
+  it looked right afterwards. The panel is now scrolled directly instead of via
+  `scrollIntoView`, its coordinates are written as individual style properties,
+  and it re-measures every frame while open (the way Floating UI's `autoUpdate`
+  does) so a field that moves — focus scrolling it into view, a modal still
+  animating, a late-loading font — can't strand it.
+- **`TimeParser::format()` no longer touches the app timezone.** It built a
+  timestamp with `mktime()`/`date()`, which put the app's zone in the path of a
+  value that is definitionally wall-clock. It now formats in UTC on a fixed date.
+
+### Added
+
+- **`minTime()` / `maxTime()` are enforced.** Previously only `strict()` bounded
+  anything, so a typed, pasted or imported time outside the window was stored
+  as-is. Both sides now reject it: the browser snaps back, and a validation rule
+  with its own message (`min_time`, `max_time`, stated in the field's display
+  format) catches whatever bypassed the client. `strict()` keeps its former job of
+  additionally confining values to the interval grid.
+- **The dropdown ships its own stylesheet**, registered as a Filament CSS asset.
+  Consumers on a custom theme no longer need an `@source` line for this package's
+  views — the panel was rendered unstyled without one. It reads Filament's runtime
+  `--gray-*` variables, so it still follows the app's theme.
+- **The committed value is rendered into the input server-side,** so an edit form
+  no longer flashes empty time boxes while the lazily loaded component arrives.
+- **`Home`, `End`, `PageUp` and `PageDown`** move through the suggestions, and the
+  input gets `aria-invalid` when the field has an error (kept current across
+  roundtrips, as is `disabled`, despite the `wire:ignore` root).
+- **A JavaScript test suite** (`npm test`, via `node --test`) covering the Alpine
+  component. It and the PHP suite both run `tests/Fixtures/parse-cases.json`, so
+  the two mirrored parsers can no longer drift silently. Also added architecture
+  tests and feature tests that render the field through a real Livewire component.
+- `displayFormat` now honours `date()`-style backslash escapes on the client, as
+  it already did on the server.
+
+### Changed
+
+- **Requires `filament/forms` instead of `filament/filament`.** The field only ever
+  used Forms, Schemas and Support; depending on the full panel package meant a
+  plain Livewire app couldn't install it. No change for panel users.
+- `defaultDuration()` auto-fill is clamped into `[minTime, maxTime]`, not just
+  capped at the ceiling.
+- Removed `resources/css/index.css`, which was unreferenced and pointed at a path
+  that only resolved inside this repository.
+
 ## 1.0.6 - 2026-07-21
 
 No runtime changes — the field behaves identically to 1.0.5. This release covers
